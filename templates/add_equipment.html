@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+
+{% block title %}Add New Equipment{% endblock %}
+
+{% block content %}
+<div class="content-wrapper" style="max-width: 1200px; margin: 0 auto; padding: 1.5rem 1rem;">
+
+    <!-- Breadcrumb & Header -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.25rem;">
+                <a href="/" style="color: #38bdf8; text-decoration: none;">Dashboard</a> &rsaquo; 
+                <a href="/assets" style="color: #38bdf8; text-decoration: none;">Asset Inventory</a> &rsaquo; 
+                <span>Add Equipment</span>
+            </div>
+            <h1 style="font-size: 1.65rem; font-weight: 700; color: #f8fafc; display: flex; align-items: center; gap: 0.6rem;">
+                <i class="fa-solid fa-square-plus text-cyan"></i>
+                <span>Register New Hospital Equipment</span>
+            </h1>
+            <p style="color: #94a3b8; font-size: 0.88rem; margin-top: 0.25rem;">
+                Enroll new clinical devices into the RTLS registry with automatic BLE 5.0 beacon provisioning and hospital LAN association.
+            </p>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+            <a href="/assets" class="btn btn-secondary btn-sm">
+                <i class="fa-solid fa-boxes-stacked"></i> View Inventory
+            </a>
+            <a href="/map" class="btn btn-primary btn-sm">
+                <i class="fa-solid fa-map-location-dot"></i> View on Floor Map
+            </a>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 1.5rem;" class="add-eq-grid">
+
+        <!-- Form Card -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fa-solid fa-sliders text-cyan"></i>
+                    <span>Equipment Registration Details</span>
+                </div>
+                <span style="font-size: 0.75rem; color: #94a3b8; font-family: var(--font-mono);">
+                    VLAN 20 · Layer 1 BLE Provisioning
+                </span>
+            </div>
+            <div class="card-body" style="padding: 1.5rem;">
+                {% if current_user.role != 'ADMIN' %}
+                <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: var(--radius-sm); padding: 0.85rem 1rem; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.75rem;">
+                    <i class="fa-solid fa-shield-halved text-danger" style="font-size: 1.25rem;"></i>
+                    <div>
+                        <div style="font-weight: 700; color: #f87171; font-size: 0.88rem;">Restricted Operation: Admin Only</div>
+                        <div style="font-size: 0.78rem; color: #cbd5e1;">Your current role is <strong>{{ current_user.role }}</strong>. Only Hospital Administrators can register new equipment. Doctor and Staff accounts have view-only access.</div>
+                    </div>
+                </div>
+                {% endif %}
+                <form id="add-equipment-form" onsubmit="submitNewEquipment(event)">
+                    
+                    <!-- Row 1: Name and ID -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
+                        <div>
+                            <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #cbd5e1; margin-bottom: 0.4rem;">
+                                Equipment Name <span style="color: #f87171;">*</span>
+                            </label>
+                            <input type="text" id="eq-name" class="form-input" placeholder="e.g., Mindray Resona Ultrasound" required oninput="updateLivePreview()" style="width: 100%; padding: 0.6rem 0.85rem; background: #0b1120; border: 1px solid #334155; border-radius: 6px; color: #fff; font-size: 0.88rem;">
+                        </div>
+
+                        <div>
+                            <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #cbd5e1; margin-bottom: 0.4rem;">
+                                Unique Equipment ID <span style="color: #f87171;">*</span>
+                            </label>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <input type="text" id="eq-id" class="form-input" placeholder="e.g., AST-ULTRA-01" required oninput="updateLivePreview()" style="width: 100%; padding: 0.6rem 0.85rem; background: #0b1120; border: 1px solid #334155; border-radius: 6px; color: #fff; font-size: 0.88rem; font-family: var(--font-mono); text-transform: uppercase;">
+                                <button type="button" class="btn btn-secondary btn-sm" onclick="generateSuggestedId()" title="Auto-generate next unique ID" style="white-space: nowrap;">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i> Auto
+                                </button>
+                            </div>
+                            <div id="id-feedback" style="font-size: 0.72rem; margin-top: 0.25rem; color: #94a3b8;">Format: AST-[CATEGORY]-[NUM]</div>
+                        </div>
+                    </div>
+
+                    <!-- Row 2: Category and Model -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
+                        <div>
+                            <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #cbd5e1; margin-bottom: 0.4rem;">
+                                Equipment Category <span style="color: #f87171;">*</span>
+                            </label>
+                            <select id="eq-category" class="form-select" required onchange="onCategoryChanged()" style="width: 100%; padding: 0.6rem 0.85rem; background: #0b1120; border: 1px solid #334155; border-radius: 6px; color: #fff; font-size: 0.88rem;">
+                                <option value="Ventilator">Ventilator (Critical Care)</option>
+                                <option value="Defibrillator">Defibrillator (Emergency / Trauma)</option>
+                                <option value="Patient Monitor">Patient Monitor (Multi-Para Vital Signs)</option>
+                                <option value="Infusion Pump">Infusion Pump (Smart Dosing)</option>
+                                <option value="ECG Machine">ECG Machine (12-Lead Electrocardiograph)</option>
+                                <option value="Wheelchair">Wheelchair (Patient Transport)</option>
+                                <option value="Portable X-Ray">Portable X-Ray Unit</option>
+                                <option value="Ultrasound">Ultrasound Machine</option>
+                                <option value="Dialysis Machine">Dialysis Machine</option>
+                                <option value="Syringe Pump">Syringe Pump</option>
+                                <option value="Medical Device">Other Clinical Asset</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #cbd5e1; margin-bottom: 0.4rem;">
+                                Equipment Model / Serial
+                            </label>
+                            <input type="text" id="eq-model" class="form-input" placeholder="e.g., Mindray 7-Series Pro" oninput="updateLivePreview()" style="width: 100%; padding: 0.6rem 0.85rem; background: #0b1120; border: 1px solid #334155; border-radius: 6px; color: #fff; font-size: 0.88rem;">
+                        </div>
+                    </div>
+
+                    <!-- Row 3: Assigned Department and Initial Physical Location -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
+                        <div>
+                            <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #cbd5e1; margin-bottom: 0.4rem;">
+                                Assigned Department / Home Ward <span style="color: #f87171;">*</span>
+                            </label>
+                            <select id="eq-assigned-room" class="form-select" required onchange="onAssignedRoomChanged()" style="width: 100%; padding: 0.6rem 0.85rem; background: #0b1120; border: 1px solid #334155; border-radius: 6px; color: #fff; font-size: 0.88rem;">
+                                {% for r in rooms %}
+                                <option value="{{ r.room_id }}">{{ r.name }} ({{ r.floor }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div>
+                            <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #cbd5e1; margin-bottom: 0.4rem;">
+                                Initial Physical Location / Room <span style="color: #f87171;">*</span>
+                            </label>
+                            <select id="eq-current-room" class="form-select" required onchange="updateLivePreview()" style="width: 100%; padding: 0.6rem 0.85rem; background: #0b1120; border: 1px solid #334155; border-radius: 6px; color: #fff; font-size: 0.88rem;">
+                                {% for r in rooms %}
+                                <option value="{{ r.room_id }}">{{ r.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Row 4: Status and Quantity -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+                        <div>
+                            <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #cbd5e1; margin-bottom: 0.4rem;">
+                                Operational Status <span style="color: #f87171;">*</span>
+                            </label>
+                            <select id="eq-status" class="form-select" onchange="updateLivePreview()" style="width: 100%; padding: 0.6rem 0.85rem; background: #0b1120; border: 1px solid #334155; border-radius: 6px; color: #fff; font-size: 0.88rem;">
+                                <option value="Available">Available (Ready for Deployment)</option>
+                                <option value="In Use">In Use (Assigned to Patient)</option>
+                                <option value="Maintenance">Maintenance (Service Pending)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #cbd5e1; margin-bottom: 0.4rem;">
+                                Quantity Registered
+                            </label>
+                            <input type="number" id="eq-quantity" class="form-input" min="1" max="50" value="1" style="width: 100%; padding: 0.6rem 0.85rem; background: #0b1120; border: 1px solid #334155; border-radius: 6px; color: #fff; font-size: 0.88rem;">
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div style="display: flex; gap: 1rem; align-items: center; border-top: 1px solid #1e293b; padding-top: 1.25rem;">
+                        {% if current_user.role == 'ADMIN' %}
+                        <button type="submit" id="btn-submit-eq" class="btn btn-primary" style="flex: 1; padding: 0.75rem 1.5rem; font-size: 0.95rem;">
+                            <i class="fa-solid fa-plus-circle"></i>
+                            <span>Add Equipment to System</span>
+                        </button>
+                        {% else %}
+                        <button type="button" id="btn-submit-eq" class="btn btn-secondary" disabled style="flex: 1; padding: 0.75rem 1.5rem; font-size: 0.95rem; opacity: 0.6; cursor: not-allowed;" title="Admin permission required to register equipment">
+                            <i class="fa-solid fa-lock"></i>
+                            <span>Add Equipment Restricted (Admin Only)</span>
+                        </button>
+                        {% endif %}
+                        <button type="reset" class="btn btn-secondary" onclick="resetFormPreview()">
+                            <i class="fa-solid fa-rotate-left"></i> Clear
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Right Column: Live BLE Tag & Network Provisioning Preview -->
+        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+            
+            <!-- Live Tag Badge Card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fa-solid fa-id-card text-cyan"></i>
+                        <span>Provisioning Live Preview</span>
+                    </div>
+                    <span class="badge-vlan">Auto-Generated BLE Tag</span>
+                </div>
+                <div class="card-body" style="padding: 1.25rem;">
+                    <div id="preview-card" style="background: #090e1a; border: 1px solid #24344d; border-radius: 8px; padding: 1.25rem; position: relative;">
+                        <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 0.75rem;">
+                            <div style="display: flex; gap: 0.75rem; align-items: center;">
+                                <div id="preview-icon-box" style="width: 44px; height: 44px; border-radius: 8px; background: rgba(56, 189, 248, 0.15); border: 1px solid #38bdf8; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; color: #38bdf8;">
+                                    <i class="fa-solid fa-lungs" id="preview-icon"></i>
+                                </div>
+                                <div>
+                                    <div id="preview-name" style="font-weight: 700; font-size: 0.95rem; color: #fff;">Equipment Name</div>
+                                    <div id="preview-model" style="font-size: 0.75rem; color: #94a3b8; font-family: var(--font-mono);">Model Standard</div>
+                                </div>
+                            </div>
+                            <span id="preview-status" class="status-badge status-badge-available" style="padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 700;">Available</span>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; font-size: 0.78rem; background: #0f172a; padding: 0.75rem; border-radius: 6px; border: 1px solid #1e293b; margin-bottom: 0.75rem;">
+                            <div>
+                                <span style="color: #64748b;">Asset ID:</span>
+                                <div id="preview-id" style="font-family: var(--font-mono); font-weight: 600; color: #38bdf8;">AST-NEW-01</div>
+                            </div>
+                            <div>
+                                <span style="color: #64748b;">Initial Ward:</span>
+                                <div id="preview-room" style="font-weight: 600; color: #e2e8f0;">Intensive Care Unit</div>
+                            </div>
+                            <div>
+                                <span style="color: #64748b;">BLE Beacon Tag:</span>
+                                <div id="preview-tag-id" style="font-family: var(--font-mono); color: #2dd4bf;">TAG-BLE-AUTO</div>
+                            </div>
+                            <div>
+                                <span style="color: #64748b;">Tag MAC Address:</span>
+                                <div id="preview-tag-mac" style="font-family: var(--font-mono); color: #a78bfa;">AC:23:3F:8A:XX:XX</div>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; color: #64748b; font-family: var(--font-mono);">
+                            <span><i class="fa-solid fa-battery-full text-success"></i> Battery: 100% (New)</span>
+                            <span><i class="fa-solid fa-tower-broadcast text-cyan"></i> 0 dBm Tx Power</span>
+                            <span><i class="fa-solid fa-heart-pulse text-success"></i> Good Condition</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Provisioning Info Box -->
+            <div class="card" style="background: rgba(15, 23, 42, 0.7);">
+                <div class="card-header">
+                    <div class="card-title" style="font-size: 0.85rem;">
+                        <i class="fa-solid fa-circle-nodes text-cyan"></i>
+                        <span>Automatic Provisioning Pipeline</span>
+                    </div>
+                </div>
+                <div class="card-body" style="font-size: 0.78rem; color: #94a3b8; line-height: 1.6; padding: 1rem 1.25rem;">
+                    <ul style="padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.4rem;">
+                        <li><strong style="color: #e2e8f0;">Database Persistence:</strong> Saved to SQLite <code style="color: #38bdf8;">assets</code> and baseline <code style="color: #38bdf8;">location_history</code> tables.</li>
+                        <li><strong style="color: #e2e8f0;">Immediate Visibility:</strong> Automatically reflects on Floor Map, Live Dashboard, and Equipment Requests.</li>
+                        <li><strong style="color: #e2e8f0;">Duplicate Protection:</strong> System verifies and prevents duplicate Equipment IDs.</li>
+                        <li><strong style="color: #e2e8f0;">System Audit:</strong> Emits an automatic notification to the Administrator.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/add_equipment.js') }}"></script>
+{% endblock %}
+

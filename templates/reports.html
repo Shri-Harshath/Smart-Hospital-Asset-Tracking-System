@@ -1,0 +1,323 @@
+{% extends "base.html" %}
+
+{% block title %}Reports & Analytics{% endblock %}
+
+{% block content %}
+<div class="content-wrapper" style="max-width: 1500px; margin: 0 auto; padding: 1.5rem 1rem;">
+
+    <!-- Breadcrumb & Header -->
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.25rem;">
+                <a href="/" style="color: #38bdf8; text-decoration: none;">Dashboard</a> &rsaquo; 
+                <span>Reports & Analytics</span>
+            </div>
+            <h1 style="font-size: 1.65rem; font-weight: 700; color: #f8fafc; display: flex; align-items: center; gap: 0.6rem;">
+                <i class="fa-solid fa-chart-pie text-cyan"></i>
+                <span>Hospital Asset Tracking Intelligence & Reports</span>
+            </h1>
+            <p style="color: #94a3b8; font-size: 0.88rem; margin-top: 0.25rem;">
+                Clinical utilization metrics, room density distribution, relocation trends, and audit CSV exports.
+            </p>
+        </div>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <button class="btn btn-secondary btn-sm" onclick="loadReportsData()">
+                <i class="fa-solid fa-rotate"></i> Refresh Analytics
+            </button>
+        </div>
+    </div>
+
+    <!-- Top Analytics KPI Cards -->
+    <div class="kpi-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+        <!-- Total Assets -->
+        <div class="kpi-card">
+            <div class="kpi-icon" style="background: rgba(6, 182, 212, 0.15); color: #38bdf8;">
+                <i class="fa-solid fa-boxes-stacked"></i>
+            </div>
+            <div class="kpi-content">
+                <div class="kpi-title">Total Equipment</div>
+                <div class="kpi-value" id="rep-total-assets">0</div>
+                <div class="kpi-subtext" style="color: #38bdf8;">Registered Clinical Assets</div>
+            </div>
+        </div>
+
+        <!-- Total Movements -->
+        <div class="kpi-card">
+            <div class="kpi-icon" style="background: rgba(59, 130, 246, 0.15); color: #60a5fa;">
+                <i class="fa-solid fa-arrows-up-down-left-right"></i>
+            </div>
+            <div class="kpi-content">
+                <div class="kpi-title">Total Relocations</div>
+                <div class="kpi-value" id="rep-total-movements">0</div>
+                <div class="kpi-subtext" style="color: #60a5fa;">Tracked Movement Events</div>
+            </div>
+        </div>
+
+        <!-- Requests & Approval Rate -->
+        <div class="kpi-card">
+            <div class="kpi-icon" style="background: rgba(16, 185, 129, 0.15); color: #34d399;">
+                <i class="fa-solid fa-clipboard-check"></i>
+            </div>
+            <div class="kpi-content">
+                <div class="kpi-title">Transfer Approval Rate</div>
+                <div class="kpi-value" id="rep-approval-rate">0%</div>
+                <div class="kpi-subtext" id="rep-requests-subtext" style="color: #34d399;">0 / 0 Requests Approved</div>
+            </div>
+        </div>
+
+        <!-- BioMed Health -->
+        <div class="kpi-card">
+            <div class="kpi-icon" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24;">
+                <i class="fa-solid fa-heart-pulse"></i>
+            </div>
+            <div class="kpi-content">
+                <div class="kpi-title">Maintenance Attention</div>
+                <div class="kpi-value" id="rep-maint-attention">0</div>
+                <div class="kpi-subtext" style="color: #fbbf24;">Due Soon or In Service</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 1: Department vs Room Distribution Charts -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;" class="charts-grid-2">
+        
+        <!-- Department Distribution (Assigned Home Ward) -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fa-solid fa-building-user text-cyan"></i>
+                    <span>Department Equipment Allocation</span>
+                </div>
+                <span class="badge-vlan">Assigned Ward</span>
+            </div>
+            <div class="card-body" style="padding: 1.25rem;">
+                <div id="chart-dept-container" style="display: flex; flex-direction: column; gap: 0.85rem;">
+                    <!-- Rendered dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Current Physical Room Location Breakdown -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fa-solid fa-map-pin text-cyan"></i>
+                    <span>Current Physical Room Distribution</span>
+                </div>
+                <span class="badge-vlan" style="background: rgba(16, 185, 129, 0.15); color: #34d399;">RTLS Live</span>
+            </div>
+            <div class="card-body" style="padding: 1.25rem;">
+                <div id="chart-room-container" style="display: flex; flex-direction: column; gap: 0.85rem;">
+                    <!-- Rendered dynamically -->
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Section 2: Requests Breakdown & Maintenance Breakdown -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;" class="charts-grid-2">
+        
+        <!-- Equipment Requests Breakdown -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fa-solid fa-clipboard-list text-cyan"></i>
+                    <span>Department Requests Breakdown</span>
+                </div>
+                <span class="badge-vlan">Workflow Engine</span>
+            </div>
+            <div class="card-body" style="padding: 1.25rem;">
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.25rem; text-align: center;">
+                    <div style="background: #090e1a; padding: 0.85rem; border-radius: 6px; border: 1px solid rgba(16, 185, 129, 0.3);">
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #34d399;" id="stat-req-approved">0</div>
+                        <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.2rem;">Approved</div>
+                    </div>
+                    <div style="background: #090e1a; padding: 0.85rem; border-radius: 6px; border: 1px solid rgba(245, 158, 11, 0.3);">
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #fbbf24;" id="stat-req-pending">0</div>
+                        <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.2rem;">Pending Review</div>
+                    </div>
+                    <div style="background: #090e1a; padding: 0.85rem; border-radius: 6px; border: 1px solid rgba(239, 68, 68, 0.3);">
+                        <div style="font-size: 1.5rem; font-weight: 700; color: #f87171;" id="stat-req-rejected">0</div>
+                        <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 0.2rem;">Rejected</div>
+                    </div>
+                </div>
+
+                <div id="chart-requests-bar" style="background: #090e1a; height: 18px; border-radius: 9px; overflow: hidden; display: flex;">
+                    <div id="bar-approved" style="background: #10b981; width: 0%; transition: width 0.5s;"></div>
+                    <div id="bar-pending" style="background: #f59e0b; width: 0%; transition: width 0.5s;"></div>
+                    <div id="bar-rejected" style="background: #ef4444; width: 0%; transition: width 0.5s;"></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: #64748b; margin-top: 0.4rem;">
+                    <span>Green: Approved</span>
+                    <span>Amber: Pending</span>
+                    <span>Red: Rejected</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Maintenance Health Breakdown -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fa-solid fa-wrench text-cyan"></i>
+                    <span>Maintenance Health Distribution</span>
+                </div>
+                <span class="badge-vlan">Biomedical Status</span>
+            </div>
+            <div class="card-body" style="padding: 1.25rem;">
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; margin-bottom: 1.25rem; text-align: center;">
+                    <div style="background: #090e1a; padding: 0.75rem 0.5rem; border-radius: 6px; border: 1px solid rgba(16, 185, 129, 0.3);">
+                        <div style="font-size: 1.35rem; font-weight: 700; color: #34d399;" id="stat-maint-good">0</div>
+                        <div style="font-size: 0.7rem; color: #94a3b8;">Good</div>
+                    </div>
+                    <div style="background: #090e1a; padding: 0.75rem 0.5rem; border-radius: 6px; border: 1px solid rgba(245, 158, 11, 0.3);">
+                        <div style="font-size: 1.35rem; font-weight: 700; color: #fbbf24;" id="stat-maint-due">0</div>
+                        <div style="font-size: 0.7rem; color: #94a3b8;">Due Soon</div>
+                    </div>
+                    <div style="background: #090e1a; padding: 0.75rem 0.5rem; border-radius: 6px; border: 1px solid rgba(139, 92, 246, 0.3);">
+                        <div style="font-size: 1.35rem; font-weight: 700; color: #c084fc;" id="stat-maint-under">0</div>
+                        <div style="font-size: 0.7rem; color: #94a3b8;">In Shop</div>
+                    </div>
+                    <div style="background: #090e1a; padding: 0.75rem 0.5rem; border-radius: 6px; border: 1px solid rgba(239, 68, 68, 0.3);">
+                        <div style="font-size: 1.35rem; font-weight: 700; color: #f87171;" id="stat-maint-repair">0</div>
+                        <div style="font-size: 0.7rem; color: #94a3b8;">Needs Repair</div>
+                    </div>
+                </div>
+
+                <div id="chart-maint-bar" style="background: #090e1a; height: 18px; border-radius: 9px; overflow: hidden; display: flex;">
+                    <div id="bar-maint-good" style="background: #10b981; width: 0%; transition: width 0.5s;"></div>
+                    <div id="bar-maint-due" style="background: #f59e0b; width: 0%; transition: width 0.5s;"></div>
+                    <div id="bar-maint-under" style="background: #8b5cf6; width: 0%; transition: width 0.5s;"></div>
+                    <div id="bar-maint-repair" style="background: #ef4444; width: 0%; transition: width 0.5s;"></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 0.72rem; color: #64748b; margin-top: 0.4rem;">
+                    <span>Green: Good</span>
+                    <span>Amber: Due</span>
+                    <span>Purple: Maint</span>
+                    <span>Red: Repair</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Section 3: Most Frequently Moved Equipment (Leaderboard) -->
+    <div class="card" style="margin-bottom: 1.5rem;">
+        <div class="card-header">
+            <div class="card-title">
+                <i class="fa-solid fa-ranking-star text-cyan"></i>
+                <span>Top Frequently Relocated Clinical Equipment</span>
+            </div>
+            <span class="badge-vlan">Movement Activity Leaderboard</span>
+        </div>
+        <div class="card-body" style="padding: 0; overflow-x: auto;">
+            <table class="data-table" style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #0f172a; text-align: left; font-size: 0.75rem; color: #94a3b8; text-transform: uppercase;">
+                        <th style="padding: 0.75rem 1rem;">Rank</th>
+                        <th style="padding: 0.75rem 1rem;">Asset ID</th>
+                        <th style="padding: 0.75rem 1rem;">Equipment Name</th>
+                        <th style="padding: 0.75rem 1rem;">Category</th>
+                        <th style="padding: 0.75rem 1rem;">Total Relocations</th>
+                        <th style="padding: 0.75rem 1rem;">Movement Activity Gauge</th>
+                    </tr>
+                </thead>
+                <tbody id="top-moved-tbody">
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 2rem; color: #64748b;">
+                            Loading movement leaderboard...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Section 4: CSV Data Export Center -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">
+                <i class="fa-solid fa-file-csv text-cyan"></i>
+                <span>One-Click Clinical Data Export Center</span>
+            </div>
+            <span class="badge-vlan">RFC 4180 CSV Downloads</span>
+        </div>
+        <div class="card-body" style="padding: 1.5rem;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.25rem;">
+                
+                <!-- Export 1: Inventory -->
+                <div style="background: #090e1a; border: 1px solid #1e293b; border-radius: 8px; padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <div style="font-size: 1.1rem; color: #38bdf8; margin-bottom: 0.5rem;">
+                            <i class="fa-solid fa-boxes-stacked"></i>
+                        </div>
+                        <div style="font-weight: 700; font-size: 0.95rem; color: #f8fafc; margin-bottom: 0.35rem;">Asset Inventory CSV</div>
+                        <div style="font-size: 0.78rem; color: #94a3b8; line-height: 1.4; margin-bottom: 1rem;">
+                            Complete export of all registered equipment, BLE MAC addresses, current wards, signal readings, and battery levels.
+                        </div>
+                    </div>
+                    <a href="/api/reports/export/inventory" class="btn btn-secondary btn-sm" style="text-align: center;">
+                        <i class="fa-solid fa-download"></i> Download Inventory CSV
+                    </a>
+                </div>
+
+                <!-- Export 2: Movements -->
+                <div style="background: #090e1a; border: 1px solid #1e293b; border-radius: 8px; padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <div style="font-size: 1.1rem; color: #60a5fa; margin-bottom: 0.5rem;">
+                            <i class="fa-solid fa-route"></i>
+                        </div>
+                        <div style="font-weight: 700; font-size: 0.95rem; color: #f8fafc; margin-bottom: 0.35rem;">Movement History CSV</div>
+                        <div style="font-size: 0.78rem; color: #94a3b8; line-height: 1.4; margin-bottom: 1rem;">
+                            Historical audit log containing previous and new locations, timestamps, and gateway associations.
+                        </div>
+                    </div>
+                    <a href="/api/reports/export/movements" class="btn btn-secondary btn-sm" style="text-align: center;">
+                        <i class="fa-solid fa-download"></i> Download Movements CSV
+                    </a>
+                </div>
+
+                <!-- Export 3: Requests -->
+                <div style="background: #090e1a; border: 1px solid #1e293b; border-radius: 8px; padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <div style="font-size: 1.1rem; color: #34d399; margin-bottom: 0.5rem;">
+                            <i class="fa-solid fa-clipboard-check"></i>
+                        </div>
+                        <div style="font-weight: 700; font-size: 0.95rem; color: #f8fafc; margin-bottom: 0.35rem;">Equipment Requests CSV</div>
+                        <div style="font-size: 0.78rem; color: #94a3b8; line-height: 1.4; margin-bottom: 1rem;">
+                            Log of all inter-ward transfer requests, approvals, rejections, timestamps, and justification reasons.
+                        </div>
+                    </div>
+                    <a href="/api/reports/export/requests" class="btn btn-secondary btn-sm" style="text-align: center;">
+                        <i class="fa-solid fa-download"></i> Download Requests CSV
+                    </a>
+                </div>
+
+                <!-- Export 4: Maintenance -->
+                <div style="background: #090e1a; border: 1px solid #1e293b; border-radius: 8px; padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <div style="font-size: 1.1rem; color: #fbbf24; margin-bottom: 0.5rem;">
+                            <i class="fa-solid fa-wrench"></i>
+                        </div>
+                        <div style="font-weight: 700; font-size: 0.95rem; color: #f8fafc; margin-bottom: 0.35rem;">Maintenance Records CSV</div>
+                        <div style="font-size: 0.78rem; color: #94a3b8; line-height: 1.4; margin-bottom: 1rem;">
+                            Preventative service certifications, inspection dates, technician logs, and repair expense logs.
+                        </div>
+                    </div>
+                    <a href="/api/reports/export/maintenance" class="btn btn-secondary btn-sm" style="text-align: center;">
+                        <i class="fa-solid fa-download"></i> Download Maintenance CSV
+                    </a>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/reports.js') }}"></script>
+{% endblock %}
+

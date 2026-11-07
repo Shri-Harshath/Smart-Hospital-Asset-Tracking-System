@@ -1,0 +1,280 @@
+{% extends "base.html" %}
+
+{% block title %}User Login & Role Access{% endblock %}
+
+{% block content %}
+<div class="content-wrapper" style="max-width: 1100px; margin: 0 auto; padding: 2rem 1rem;">
+
+    <!-- Breadcrumb & Header -->
+    <div style="text-align: center; margin-bottom: 2rem;">
+        <div style="width: 56px; height: 56px; border-radius: 14px; background: linear-gradient(135deg, #0d9488, #06b6d4); display: inline-flex; align-items: center; justify-content: center; font-size: 1.6rem; color: #fff; box-shadow: 0 0 20px rgba(6, 182, 212, 0.4); margin-bottom: 0.75rem;">
+            <i class="fa-solid fa-hospital-user"></i>
+        </div>
+        <h1 style="font-size: 1.85rem; font-weight: 700; color: #f8fafc;">
+            Hospital Information System Authentication
+        </h1>
+        <p style="color: #94a3b8; font-size: 0.9rem; margin-top: 0.35rem; max-width: 600px; margin-left: auto; margin-right: auto;">
+            Secure Role-Based Access Control (RBAC) protecting clinical IoT telemetry, equipment transfers, and biomedical configuration.
+        </p>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1.1fr 1fr; gap: 2rem; align-items: start;" class="login-grid">
+
+        <!-- Login Card -->
+        <div class="card" style="box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);">
+            <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <div class="card-title">
+                    <i class="fa-solid fa-lock text-cyan"></i>
+                    <span>Secure Sign In</span>
+                </div>
+                <span class="badge-vlan">SHA-256 / Werkzeug Hash</span>
+            </div>
+            <div class="card-body" style="padding: 1.75rem;">
+                
+                <!-- Quick Demo Login Badges -->
+                <div style="background: #090e1a; border: 1px solid #1e293b; border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+                    <div style="font-size: 0.75rem; color: #94a3b8; font-weight: 600; text-transform: uppercase; margin-bottom: 0.6rem; display: flex; align-items: center; gap: 0.4rem;">
+                        <i class="fa-solid fa-bolt text-cyan"></i> Quick Presentation Logins:
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="fillCredentials('admin', 'admin123')" style="justify-content: space-between; padding: 0.45rem 0.75rem;">
+                            <span><i class="fa-solid fa-user-shield text-danger"></i> <strong>Admin</strong> (admin / admin123)</span>
+                            <span class="role-tag role-tag-admin">ADMIN</span>
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="fillCredentials('dr_sharma', 'doctor123')" style="justify-content: space-between; padding: 0.45rem 0.75rem;">
+                            <span><i class="fa-solid fa-user-doctor text-cyan"></i> <strong>Dr. Sharma</strong> (dr_sharma / doctor123)</span>
+                            <span class="role-tag role-tag-doctor">DOCTOR</span>
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="fillCredentials('nurse_priya', 'staff123')" style="justify-content: space-between; padding: 0.45rem 0.75rem;">
+                            <span><i class="fa-solid fa-user-nurse text-success"></i> <strong>Nurse Priya</strong> (nurse_priya / staff123)</span>
+                            <span class="role-tag role-tag-staff">STAFF</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Form -->
+                <form id="login-form" onsubmit="handleLoginSubmit(event)">
+                    <div style="margin-bottom: 1.25rem;">
+                        <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #cbd5e1; margin-bottom: 0.4rem;">
+                            Username
+                        </label>
+                        <div style="position: relative;">
+                            <i class="fa-solid fa-user" style="position: absolute; left: 0.85rem; top: 0.75rem; color: #64748b;"></i>
+                            <input type="text" id="login-username" class="form-input" placeholder="Enter username" required style="width: 100%; padding: 0.65rem 0.85rem 0.65rem 2.4rem; background: #0b1120; border: 1px solid #334155; border-radius: 6px; color: #fff; font-size: 0.9rem;">
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; font-size: 0.82rem; font-weight: 600; color: #cbd5e1; margin-bottom: 0.4rem;">
+                            Password
+                        </label>
+                        <div style="position: relative;">
+                            <i class="fa-solid fa-key" style="position: absolute; left: 0.85rem; top: 0.75rem; color: #64748b;"></i>
+                            <input type="password" id="login-password" class="form-input" placeholder="Enter password" required style="width: 100%; padding: 0.65rem 0.85rem 0.65rem 2.4rem; background: #0b1120; border: 1px solid #334155; border-radius: 6px; color: #fff; font-size: 0.9rem;">
+                        </div>
+                    </div>
+
+                    <button type="submit" id="btn-login" class="btn btn-primary" style="width: 100%; padding: 0.75rem; font-size: 0.95rem;">
+                        <i class="fa-solid fa-arrow-right-to-bracket"></i>
+                        <span>Sign In to System</span>
+                    </button>
+                </form>
+
+                {% if current_user %}
+                <div style="border-top: 1px solid #1e293b; padding-top: 1rem; margin-top: 1.25rem; display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem;">
+                    <div>
+                        <span style="color: #64748b;">Active Session:</span> 
+                        <strong style="color: #e2e8f0;">{{ current_user.full_name }}</strong>
+                    </div>
+                    <a href="/logout" class="btn btn-secondary btn-sm" style="color: #f87171;">
+                        <i class="fa-solid fa-arrow-right-from-bracket"></i> Sign Out
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Role Permissions Matrix & Current Session Status -->
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+            
+            <!-- Current Active Role Card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fa-solid fa-id-badge text-cyan"></i>
+                        <span>Active Session Profile</span>
+                    </div>
+                    <span class="role-tag role-tag-{{ current_user.role.lower() }}">{{ current_user.role }}</span>
+                </div>
+                <div class="card-body" style="padding: 1.25rem;">
+                    <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
+                        <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(56, 189, 248, 0.15); border: 1px solid #38bdf8; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: #38bdf8;">
+                            {% if current_user.role == 'ADMIN' %}
+                            <i class="fa-solid fa-user-shield"></i>
+                            {% elif current_user.role == 'DOCTOR' %}
+                            <i class="fa-solid fa-user-doctor"></i>
+                            {% else %}
+                            <i class="fa-solid fa-user-nurse"></i>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <div style="font-weight: 700; font-size: 1.05rem; color: #fff;">{{ current_user.full_name }}</div>
+                            <div style="font-size: 0.78rem; color: #94a3b8; font-family: var(--font-mono);">
+                                Username: <strong>{{ current_user.username }}</strong> &bull; Dept: {{ current_user.department }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Instant Role Switcher (Presentation Tool) -->
+                    <div style="background: #090e1a; border: 1px solid #1e293b; border-radius: 6px; padding: 0.85rem;">
+                        <div style="font-size: 0.72rem; color: #94a3b8; font-weight: 600; text-transform: uppercase; margin-bottom: 0.5rem;">
+                            Live Classroom Role Switcher:
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem;">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="switchActiveRole('ADMIN')">
+                                ADMIN
+                            </button>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="switchActiveRole('DOCTOR')">
+                                DOCTOR
+                            </button>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="switchActiveRole('STAFF')">
+                                STAFF
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Role Permissions Matrix Table -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title" style="font-size: 0.88rem;">
+                        <i class="fa-solid fa-table-list text-cyan"></i>
+                        <span>Role Permissions Matrix</span>
+                    </div>
+                </div>
+                <div class="card-body" style="padding: 0; overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.78rem;">
+                        <thead>
+                            <tr style="background: #090e1a; border-bottom: 1px solid #1e293b; color: #94a3b8;">
+                                <th style="padding: 0.6rem 0.85rem; text-align: left;">Capability</th>
+                                <th style="padding: 0.6rem 0.85rem; text-align: center;">Admin</th>
+                                <th style="padding: 0.6rem 0.85rem; text-align: center;">Doctor</th>
+                                <th style="padding: 0.6rem 0.85rem; text-align: center;">Staff</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-bottom: 1px solid #1e293b;">
+                                <td style="padding: 0.55rem 0.85rem; color: #e2e8f0;">Floor Map & Real-Time Tracking</td>
+                                <td style="padding: 0.55rem 0.85rem; text-align: center; color: #34d399;"><i class="fa-solid fa-check"></i></td>
+                                <td style="padding: 0.55rem 0.85rem; text-align: center; color: #34d399;"><i class="fa-solid fa-check"></i></td>
+                                <td style="padding: 0.55rem 0.85rem; text-align: center; color: #34d399;"><i class="fa-solid fa-check"></i></td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #1e293b;">
+                                <td style="padding: 0.55rem 0.85rem; color: #e2e8f0;">Submit Equipment Request</td>
+                                <td style="padding: 0.55rem 0.85rem; text-align: center; color: #34d399;"><i class="fa-solid fa-check"></i></td>
+                                <td style="padding: 0.55rem 0.85rem; text-align: center; color: #34d399;"><i class="fa-solid fa-check"></i></td>
+                                <td style="padding: 0.55rem 0.85rem; text-align: center; color: #34d399;"><i class="fa-solid fa-check"></i></td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #1e293b;">
+                                <td style="padding: 0.55rem 0.85rem; color: #e2e8f0;">Approve / Reject Requests</td>
+                                <td style="padding: 0.55rem 0.85rem; text-align: center; color: #34d399;"><i class="fa-solid fa-check"></i></td>
+                                <td style="padding: 0.55rem 0.85rem; text-align: center; color: #64748b;"><i class="fa-solid fa-xmark"></i></td>
+                                <td style="padding: 0.55rem 0.85rem; text-align: center; color: #64748b;"><i class="fa-solid fa-xmark"></i></td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #1e293b;">
+                                <td style="padding: 0.55rem 0.85rem; color: #e2e8f0;">Add New Equipment</td>
+                                <td style="padding: 0.55rem 0.85rem; text-align: center; color: #34d399;"><i class="fa-solid fa-check"></i></td>
+                                <td style="padding: 0.55rem 0.85rem; text-align: center; color: #64748b;"><i class="fa-solid fa-xmark"></i></td>
+                                <td style="padding: 0.55rem 0.85rem; text-align: center; color: #64748b;"><i class="fa-solid fa-xmark"></i></td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #1e293b;">
+                                <td style="padding: 0.55rem 0.85rem; color: #e2e8f0;">Schedule / Save Maintenance</td>
+                                <td style="padding: 0.55rem 0.85rem; text-align: center; color: #34d399;"><i class="fa-solid fa-check"></i></td>
+                                <td style="padding: 0.55rem 0.85rem; text-align: center; color: #34d399;"><i class="fa-solid fa-check"></i></td>
+                                <td style="padding: 0.55rem 0.85rem; text-align: center; color: #64748b;"><i class="fa-solid fa-xmark"></i></td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 0.55rem 0.85rem; color: #e2e8f0;">CSV Data Audit Exports</td>
+                                <td style="padding: 0.55rem 0.85rem; text-align: center; color: #34d399;"><i class="fa-solid fa-check"></i></td>
+                                <td style="padding: 0.55rem 0.85rem; text-align: center; color: #34d399;"><i class="fa-solid fa-check"></i></td>
+                                <td style="padding: 0.55rem 0.85rem; text-align: center; color: #64748b;"><i class="fa-solid fa-xmark"></i></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function fillCredentials(u, p) {
+    document.getElementById('login-username').value = u;
+    document.getElementById('login-password').value = p;
+}
+
+async function handleLoginSubmit(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btn-login');
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Authenticating...';
+
+    const username = document.getElementById('login-username').value.trim();
+    const password = document.getElementById('login-password').value;
+
+    try {
+        const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.status === 'success') {
+            playHospitalAlertChime('INFO');
+            showToast(`Welcome back, ${data.user.full_name} (${data.user.role})!`, 'success');
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 800);
+        } else {
+            playHospitalAlertChime('WARNING');
+            showToast(data.error || 'Invalid credentials.', 'error');
+        }
+    } catch (err) {
+        showToast('Login error: ' + err.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    }
+}
+
+async function switchActiveRole(role) {
+    try {
+        const res = await fetch('/api/auth/switch_role', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ role })
+        });
+
+        const data = await res.json();
+        if (res.ok && data.status === 'success') {
+            playHospitalAlertChime('INFO');
+            showToast(`Switched active role to ${data.user.role}: ${data.user.full_name}`, 'success');
+            setTimeout(() => {
+                window.location.reload();
+            }, 600);
+        }
+    } catch (err) {
+        showToast('Role switch error: ' + err.message, 'error');
+    }
+}
+</script>
+{% endblock %}
+

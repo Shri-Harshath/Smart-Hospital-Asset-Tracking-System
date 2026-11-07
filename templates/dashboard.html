@@ -1,0 +1,416 @@
+{% extends "base.html" %}
+
+{% block title %}Live Hospital Dashboard | Smart Hospital RTLS{% endblock %}
+
+{% block content %}
+<div class="dashboard-page">
+
+    <!-- KPI Summary Grid -->
+    <div class="kpi-grid">
+        <div class="kpi-card kpi-blue">
+            <div class="kpi-icon"><i class="fa-solid fa-hospital-user"></i></div>
+            <div class="kpi-info">
+                <div class="kpi-value" id="stat-total-assets">12</div>
+                <div class="kpi-label">Total Tagged Assets</div>
+                <div class="kpi-subtext"><i class="fa-solid fa-tag"></i> BLE 5.0 Beacon Tags</div>
+            </div>
+        </div>
+
+        <div class="kpi-card kpi-green">
+            <div class="kpi-icon"><i class="fa-solid fa-heart-pulse"></i></div>
+            <div class="kpi-info">
+                <div class="kpi-value" id="stat-in-use">5</div>
+                <div class="kpi-label">Active / In Clinical Use</div>
+                <div class="kpi-subtext"><i class="fa-solid fa-circle-check"></i> Patient Monitored</div>
+            </div>
+        </div>
+
+        <div class="kpi-card kpi-cyan">
+            <div class="kpi-icon"><i class="fa-solid fa-box-archive"></i></div>
+            <div class="kpi-info">
+                <div class="kpi-value" id="stat-available">6</div>
+                <div class="kpi-label">Available Equipment</div>
+                <div class="kpi-subtext"><i class="fa-solid fa-clock"></i> Ready for Dispatch</div>
+            </div>
+        </div>
+
+        <div class="kpi-card kpi-amber">
+            <div class="kpi-icon"><i class="fa-solid fa-screwdriver-wrench"></i></div>
+            <div class="kpi-info">
+                <div class="kpi-value" id="stat-maintenance">1</div>
+                <div class="kpi-label">Under Maintenance</div>
+                <div class="kpi-subtext"><i class="fa-solid fa-triangle-exclamation"></i> Calibration Due</div>
+            </div>
+        </div>
+
+        <div class="kpi-card kpi-danger">
+            <div class="kpi-icon"><i class="fa-solid fa-shield-halved"></i></div>
+            <div class="kpi-info">
+                <div class="kpi-value" id="stat-alerts">2</div>
+                <div class="kpi-label">Active Alerts / Breaches</div>
+                <div class="kpi-subtext"><i class="fa-solid fa-bell"></i> Geofence & Boundary</div>
+            </div>
+        </div>
+
+        <div class="kpi-card kpi-purple">
+            <div class="kpi-icon"><i class="fa-solid fa-network-wired"></i></div>
+            <div class="kpi-info">
+                <div class="kpi-value">10.20.0.0/22</div>
+                <div class="kpi-label">IoT VLAN 20 Subnet</div>
+                <div class="kpi-subtext"><i class="fa-solid fa-server"></i> 7 Active Gateways</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Data Flow Visualizer (End-to-End IoT Pipeline) -->
+    <div class="card pipeline-section">
+        <div class="card-header">
+            <div class="card-title">
+                <i class="fa-solid fa-route text-cyan"></i>
+                <span>Live Data Flow: Radio Advertisement &rarr; Hospital LAN &rarr; MQTT &rarr; Dashboard</span>
+            </div>
+            <div style="font-size: 0.75rem; color: #94a3b8; font-family: var(--font-mono);">
+                QoS 1 · TCP Port 1883 · 802.1Q VLAN 20
+            </div>
+        </div>
+        <div class="card-body" style="padding: 1rem 1.25rem;">
+            <div class="pipeline-container">
+                <!-- 1. BLE Tag -->
+                <div class="pipeline-node" id="node-tag">
+                    <div class="node-layer-badge">Layer 1: Sensing</div>
+                    <div class="node-icon"><i class="fa-solid fa-satellite-dish" style="color: #38bdf8;"></i></div>
+                    <div class="node-title">BLE 5.0 Tag</div>
+                    <div class="node-meta">2.4 GHz ISM · Adv Ch 37-39</div>
+                </div>
+
+                <div class="pipeline-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+
+                <!-- 2. ESP32 Gateway -->
+                <div class="pipeline-node" id="node-gw">
+                    <div class="node-layer-badge">Layer 2: Gateway</div>
+                    <div class="node-icon"><i class="fa-solid fa-microchip" style="color: #2dd4bf;"></i></div>
+                    <div class="node-title">ESP32 / Pi Gateway</div>
+                    <div class="node-meta">Radio &rarr; IP Packets</div>
+                </div>
+
+                <div class="pipeline-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+
+                <!-- 3. Access Switch -->
+                <div class="pipeline-node" id="node-switch">
+                    <div class="node-layer-badge">Layer 3: Access</div>
+                    <div class="node-icon"><i class="fa-solid fa-ethernet" style="color: #60a5fa;"></i></div>
+                    <div class="node-title">Access Switch (PoE)</div>
+                    <div class="node-meta">802.3af · VLAN 20 Tag</div>
+                </div>
+
+                <div class="pipeline-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+
+                <!-- 4. Core Switch & Firewall -->
+                <div class="pipeline-node" id="node-core">
+                    <div class="node-layer-badge">Layer 3: Core</div>
+                    <div class="node-icon"><i class="fa-solid fa-shield-virus" style="color: #a78bfa;"></i></div>
+                    <div class="node-title">Core & Firewall</div>
+                    <div class="node-meta">ACL Filter · Inter-VLAN</div>
+                </div>
+
+                <div class="pipeline-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+
+                <!-- 5. MQTT Broker -->
+                <div class="pipeline-node" id="node-broker">
+                    <div class="node-layer-badge">Application: Bus</div>
+                    <div class="node-icon"><i class="fa-solid fa-tower-broadcast" style="color: #fbbf24;"></i></div>
+                    <div class="node-title">MQTT Broker</div>
+                    <div class="node-meta">10.30.0.15:1883</div>
+                </div>
+
+                <div class="pipeline-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+
+                <!-- 6. Location Engine -->
+                <div class="pipeline-node" id="node-engine">
+                    <div class="node-layer-badge">Application: Logic</div>
+                    <div class="node-icon"><i class="fa-solid fa-compass" style="color: #34d399;"></i></div>
+                    <div class="node-title">Location Engine & DB</div>
+                    <div class="node-meta">Trilateration · Geofence</div>
+                </div>
+
+                <div class="pipeline-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+
+                <!-- 7. Dashboard -->
+                <div class="pipeline-node" id="node-ui">
+                    <div class="node-layer-badge">Presentation</div>
+                    <div class="node-icon"><i class="fa-solid fa-display" style="color: #f43f5e;"></i></div>
+                    <div class="node-title">Live Dashboard</div>
+                    <div class="node-meta">Real-Time Canvas</div>
+                </div>
+            </div>
+
+            <!-- Packet Ticker Bar -->
+            <div class="pipeline-packet-ticker" id="pipeline-ticker-text">
+                <span class="ticker-highlight"><i class="fa-solid fa-cube"></i> Live Packet Stream:</span>
+                <span>Connecting to MQTT telemetry pipeline...</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Live Floor Map & Packet Terminal Grid -->
+    <div class="dashboard-grid">
+
+        <!-- Left Column: Interactive Hospital Floor Map -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fa-solid fa-map-location-dot"></i>
+                    <span>Floor 3 Hospital Layout · Real-Time RTLS Positioning</span>
+                </div>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <span style="font-size: 0.72rem; color: #94a3b8;">Floor: <strong>3 (Block A / B)</strong></span>
+                    <button class="btn btn-sm btn-secondary" onclick="openDemoModal()" title="Trigger Geofence / Move Asset">
+                        <i class="fa-solid fa-hand-pointer"></i> Demo Controls
+                    </button>
+                </div>
+            </div>
+            <div class="card-body" style="padding: 0.75rem;">
+                <div class="map-container">
+                    <svg viewBox="0 0 800 480" class="hospital-svg-map" id="hospital-svg">
+                        <defs>
+                            <!-- Grid pattern -->
+                            <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                                <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#182338" stroke-width="0.75"/>
+                            </pattern>
+                        </defs>
+
+                        <!-- Background grid -->
+                        <rect width="800" height="480" fill="#090e1a"/>
+                        <rect width="800" height="480" fill="url(#grid)"/>
+
+                        <!-- Central Corridor Corridor Line -->
+                        <rect x="25" y="235" width="755" height="30" fill="#131c2e" stroke="#22334e" stroke-width="1" rx="4"/>
+                        <text x="400" y="254" fill="#475569" font-size="10" font-family="Inter" text-anchor="middle" letter-spacing="3">
+                            MAIN HOSPITAL CORRIDOR · BLOCK A / B TRANSIT
+                        </text>
+
+                        <!-- ROOM 1: ICU (Top Left) -->
+                        <g id="room-group-ICU">
+                            <rect id="room-rect-ICU" class="room-box" x="25" y="25" width="235" height="200" rx="8" fill="rgba(2, 132, 199, 0.08)" stroke="#0284c7" stroke-width="1.5"/>
+                            <text x="35" y="45" fill="#38bdf8" font-size="12" font-family="Inter" font-weight="700">ICU</text>
+                            <text x="35" y="58" fill="#64748b" font-size="9" font-family="Inter">Intensive Care Unit · Block A</text>
+                            <!-- Ceiling Gateway -->
+                            <g class="gateway-marker" transform="translate(230, 45)" title="Gateway GW-ICU-01 (10.20.1.10)">
+                                <circle class="radar-ring" cx="0" cy="0" r="10" fill="none" stroke="#38bdf8"/>
+                                <circle cx="0" cy="0" r="5" fill="#0284c7"/>
+                                <text x="-25" y="-10" fill="#94a3b8" font-size="8" font-family="monospace">GW-ICU-01</text>
+                            </g>
+                        </g>
+
+                        <!-- ROOM 2: Emergency Room (Top Middle) -->
+                        <g id="room-group-ER">
+                            <rect id="room-rect-ER" class="room-box" x="275" y="25" width="250" height="200" rx="8" fill="rgba(220, 38, 38, 0.08)" stroke="#dc2626" stroke-width="1.5"/>
+                            <text x="285" y="45" fill="#f87171" font-size="12" font-family="Inter" font-weight="700">Emergency Room</text>
+                            <text x="285" y="58" fill="#64748b" font-size="9" font-family="Inter">Acute Care & Trauma · Block A</text>
+                            <!-- Ceiling Gateway -->
+                            <g class="gateway-marker" transform="translate(495, 45)" title="Gateway GW-ER-01 (10.20.1.11)">
+                                <circle class="radar-ring" cx="0" cy="0" r="10" fill="none" stroke="#f87171"/>
+                                <circle cx="0" cy="0" r="5" fill="#dc2626"/>
+                                <text x="-25" y="-10" fill="#94a3b8" font-size="8" font-family="monospace">GW-ER-01</text>
+                            </g>
+                        </g>
+
+                        <!-- ROOM 3: Operation Theatre (Top Right) -->
+                        <g id="room-group-OT">
+                            <rect id="room-rect-OT" class="room-box" x="540" y="25" width="235" height="200" rx="8" fill="rgba(5, 150, 105, 0.08)" stroke="#059669" stroke-width="1.5"/>
+                            <text x="550" y="45" fill="#34d399" font-size="12" font-family="Inter" font-weight="700">Operation Theatre</text>
+                            <text x="550" y="58" fill="#64748b" font-size="9" font-family="Inter">Surgical Complex · Block A</text>
+                            <!-- Ceiling Gateway -->
+                            <g class="gateway-marker" transform="translate(745, 45)" title="Gateway GW-OT-01 (10.20.1.12)">
+                                <circle class="radar-ring" cx="0" cy="0" r="10" fill="none" stroke="#34d399"/>
+                                <circle cx="0" cy="0" r="5" fill="#059669"/>
+                                <text x="-25" y="-10" fill="#94a3b8" font-size="8" font-family="monospace">GW-OT-01</text>
+                            </g>
+                        </g>
+
+                        <!-- ROOM 4: General Ward (Bottom 1) -->
+                        <g id="room-group-GEN">
+                            <rect id="room-rect-GEN" class="room-box" x="25" y="275" width="185" height="190" rx="8" fill="rgba(8, 145, 178, 0.08)" stroke="#0891b2" stroke-width="1.5"/>
+                            <text x="35" y="295" fill="#22d3ee" font-size="11" font-family="Inter" font-weight="700">General Ward</text>
+                            <text x="35" y="308" fill="#64748b" font-size="8.5" font-family="Inter">Inpatient Ward</text>
+                            <!-- Ceiling Gateway -->
+                            <g class="gateway-marker" transform="translate(180, 295)" title="Gateway GW-GEN-01 (10.20.1.13)">
+                                <circle class="radar-ring" cx="0" cy="0" r="10" fill="none" stroke="#22d3ee"/>
+                                <circle cx="0" cy="0" r="5" fill="#0891b2"/>
+                                <text x="-30" y="-10" fill="#94a3b8" font-size="8" font-family="monospace">GW-GEN</text>
+                            </g>
+                        </g>
+
+                        <!-- ROOM 5: Cardiology (Bottom 2) -->
+                        <g id="room-group-CARDIO">
+                            <rect id="room-rect-CARDIO" class="room-box" x="225" y="275" width="185" height="190" rx="8" fill="rgba(37, 99, 235, 0.08)" stroke="#2563eb" stroke-width="1.5"/>
+                            <text x="235" y="295" fill="#60a5fa" font-size="11" font-family="Inter" font-weight="700">Cardiology</text>
+                            <text x="235" y="308" fill="#64748b" font-size="8.5" font-family="Inter">Cardiac Center</text>
+                            <!-- Ceiling Gateway -->
+                            <g class="gateway-marker" transform="translate(380, 295)" title="Gateway GW-CARDIO-01 (10.20.1.14)">
+                                <circle class="radar-ring" cx="0" cy="0" r="10" fill="none" stroke="#60a5fa"/>
+                                <circle cx="0" cy="0" r="5" fill="#2563eb"/>
+                                <text x="-35" y="-10" fill="#94a3b8" font-size="8" font-family="monospace">GW-CARDIO</text>
+                            </g>
+                        </g>
+
+                        <!-- ROOM 6: Pharmacy (Bottom 3) -->
+                        <g id="room-group-PHARM">
+                            <rect id="room-rect-PHARM" class="room-box" x="425" y="275" width="175" height="190" rx="8" fill="rgba(124, 58, 237, 0.08)" stroke="#7c3aed" stroke-width="1.5"/>
+                            <text x="435" y="295" fill="#a78bfa" font-size="11" font-family="Inter" font-weight="700">Pharmacy</text>
+                            <text x="435" y="308" fill="#64748b" font-size="8.5" font-family="Inter">Dispensary</text>
+                            <!-- Ceiling Gateway -->
+                            <g class="gateway-marker" transform="translate(570, 295)" title="Gateway GW-PHARM-01 (10.20.1.15)">
+                                <circle class="radar-ring" cx="0" cy="0" r="10" fill="none" stroke="#a78bfa"/>
+                                <circle cx="0" cy="0" r="5" fill="#7c3aed"/>
+                                <text x="-35" y="-10" fill="#94a3b8" font-size="8" font-family="monospace">GW-PHARM</text>
+                            </g>
+                        </g>
+
+                        <!-- ROOM 7: Storage (Bottom 4) -->
+                        <g id="room-group-STORAGE">
+                            <rect id="room-rect-STORAGE" class="room-box" x="615" y="275" width="160" height="190" rx="8" fill="rgba(217, 119, 6, 0.08)" stroke="#d97706" stroke-width="1.5"/>
+                            <text x="625" y="295" fill="#fbbf24" font-size="11" font-family="Inter" font-weight="700">Storage</text>
+                            <text x="625" y="308" fill="#64748b" font-size="8.5" font-family="Inter">Equipment Depot</text>
+                            <!-- Ceiling Gateway -->
+                            <g class="gateway-marker" transform="translate(745, 295)" title="Gateway GW-STORAGE-01 (10.20.1.16)">
+                                <circle class="radar-ring" cx="0" cy="0" r="10" fill="none" stroke="#fbbf24"/>
+                                <circle cx="0" cy="0" r="5" fill="#d97706"/>
+                                <text x="-35" y="-10" fill="#94a3b8" font-size="8" font-family="monospace">GW-STORAGE</text>
+                            </g>
+                        </g>
+
+                        <!-- Dynamic Assets Layer (Populated via JS) -->
+                        <g id="svg-assets-layer"></g>
+                    </svg>
+                </div>
+
+                <!-- Legend Bar -->
+                <div class="map-legend">
+                    <div class="legend-item">
+                        <span class="legend-color" style="background: #38bdf8;"></span>
+                        <span>Click Asset: Inspect & Move</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background: #10b981;"></span>
+                        <span>Green Dot: Battery &gt; 50%</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color" style="background: #ef4444;"></span>
+                        <span>Red Pulse: Geofence Breach</span>
+                    </div>
+                    <div class="legend-item">
+                        <i class="fa-solid fa-satellite-dish" style="color: #38bdf8;"></i>
+                        <span>Pulsing Rings: BLE ESP32 Gateways (VLAN 20)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Live Network Terminal & Alerts -->
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+
+            <!-- Live Network Wire Packet Terminal -->
+            <div class="card terminal-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fa-solid fa-terminal text-cyan"></i>
+                        <span>Live Network Wire Capture (MQTT/TCP)</span>
+                    </div>
+                    <div style="display: flex; gap: 0.4rem; align-items: center;">
+                        <span class="status-pill status-pill-success" style="font-size: 0.7rem; padding: 0.2rem 0.5rem;">
+                            Live Wire
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body" style="padding: 0.75rem; flex: 1; display: flex; flex-direction: column;">
+                    <div class="terminal-window" id="packet-terminal-body">
+                        <!-- Packets stream in here dynamically -->
+                        <div class="log-entry">
+                            <span class="log-time">[System Init]</span>
+                            <span class="log-proto-mqtt">SYS</span>
+                            <span class="log-detail">Listening to MQTT topic <code>hospital/blockA/floor3/#</code> on 10.30.0.15:1883</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Alerts Panel -->
+            <div class="card" id="alerts-section">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fa-solid fa-bell text-danger"></i>
+                        <span>Active Alerts & Geofencing Breaches</span>
+                    </div>
+                    <button class="btn btn-sm btn-secondary" onclick="runDemoScenario('reset')">
+                        <i class="fa-solid fa-rotate-left"></i> Reset
+                    </button>
+                </div>
+                <div class="card-body" style="padding: 0.75rem;">
+                    <div class="alerts-container" id="alerts-list-container">
+                        <!-- Alerts rendered dynamically -->
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<!-- Asset Detail Drawer / Popup (Opens when clicking asset on map) -->
+<div id="asset-detail-drawer" class="modal-overlay hidden">
+    <div class="modal-card" style="max-width: 500px;">
+        <div class="modal-header">
+            <div class="modal-title">
+                <i class="fa-solid fa-stethoscope text-cyan"></i>
+                <span id="drawer-asset-title">Asset Specification</span>
+            </div>
+            <button class="close-btn" onclick="closeAssetDrawer()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.85rem; margin-bottom: 1rem;">
+                <table class="data-table">
+                    <tr><td style="color: #94a3b8; width: 40%;">Asset ID:</td><td id="drawer-asset-id" style="font-weight: 700; color: #38bdf8;">AST-01</td></tr>
+                    <tr><td style="color: #94a3b8;">Category / Model:</td><td><span id="drawer-category">Ventilator</span> &middot; <span id="drawer-model">C6</span></td></tr>
+                    <tr><td style="color: #94a3b8;">BLE Tag ID & MAC:</td><td id="drawer-tag-id" style="font-family: monospace;">TAG-01</td></tr>
+                    <tr><td style="color: #94a3b8;"><i class="fa-solid fa-location-dot text-cyan"></i> Current Physical Location:</td><td id="drawer-current-room" style="font-weight: 800; color: #22d3ee; font-size: 1.05rem;">ICU</td></tr>
+                    <tr><td style="color: #94a3b8;"><i class="fa-solid fa-house-medical"></i> Base Department / Ward:</td><td id="drawer-assigned-room" style="font-weight: 600; color: #cbd5e1;">ICU</td></tr>
+                    <tr><td style="color: #94a3b8;">Nearest Gateway:</td><td id="drawer-gateway">GW-ICU-01 (10.20.1.10)</td></tr>
+                    <tr><td style="color: #94a3b8;">Signal Strength / Dist:</td><td id="drawer-rssi">-62 dBm (1.3m)</td></tr>
+                    <tr><td style="color: #94a3b8;">Battery Level:</td><td id="drawer-battery" style="font-weight: 700;">94%</td></tr>
+                    <tr><td style="color: #94a3b8;">Clinical Status:</td><td id="drawer-status">In Use</td></tr>
+                    <tr><td style="color: #94a3b8;">Maintenance:</td><td id="drawer-maint">OK</td></tr>
+                </table>
+            </div>
+
+            <div class="demo-section">
+                <div class="section-title"><i class="fa-solid fa-arrows-turn-to-dots"></i> Dispatch / Transfer Asset</div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <select id="drawer-target-room" class="form-select">
+                        <option value="ICU">ICU</option>
+                        <option value="ER">Emergency Room</option>
+                        <option value="OT">Operation Theatre</option>
+                        <option value="GEN">General Ward</option>
+                        <option value="CARDIO">Cardiology</option>
+                        <option value="PHARM">Pharmacy</option>
+                        <option value="STORAGE">Storage</option>
+                    </select>
+                    <button class="btn btn-cyan" onclick="transferSelectedAsset()">
+                        <i class="fa-solid fa-paper-plane"></i> Transfer
+                    </button>
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; margin-top: 0.75rem;">
+                <button class="btn btn-secondary" onclick="closeAssetDrawer()">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}
+

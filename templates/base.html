@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Smart Hospital Asset Tracking System{% endblock %} | Enterprise RTLS</title>
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Main Application Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans min-h-screen flex flex-col">
+
+    <!-- Top Navigation Bar -->
+    <header class="navbar">
+        <div class="nav-container">
+            <div class="brand-section">
+                <a href="/" class="brand-link">
+                    <div class="brand-logo">
+                        <i class="fa-solid fa-hospital-user"></i>
+                    </div>
+                    <div class="brand-text">
+                        <div class="brand-title">Smart Hospital RTLS</div>
+                        <div class="brand-subtitle">Real-Time Location Tracking · IoT & Computer Networks</div>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Central Navigation Tabs -->
+            <nav class="nav-links">
+                <a href="/" class="nav-item {% if active_page == 'dashboard' %}active{% endif %}">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="/map" class="nav-item {% if active_page == 'map' %}active{% endif %}" title="Hospital Floor Map & Room Equipment Inspector">
+                    <i class="fa-solid fa-map-location-dot"></i>
+                    <span>Floor Map</span>
+                </a>
+                <a href="/movement" class="nav-item {% if active_page == 'movement' %}active{% endif %}">
+                    <i class="fa-solid fa-arrows-up-down-left-right"></i>
+                    <span>Movement</span>
+                </a>
+                <a href="/requests" class="nav-item {% if active_page == 'requests' %}active{% endif %}" title="Equipment Request Management & Approvals">
+                    <i class="fa-solid fa-clipboard-list"></i>
+                    <span>Requests</span>
+                    <span id="nav-pending-badge" class="badge-pending hidden">0</span>
+                </a>
+                <a href="/equipment/add" class="nav-item {% if active_page == 'add_equipment' %}active{% endif %}" title="Register New Hospital Equipment">
+                    <i class="fa-solid fa-square-plus"></i>
+                    <span>Add Equipment</span>
+                </a>
+                <a href="/maintenance" class="nav-item {% if active_page == 'maintenance' %}active{% endif %}" title="Maintenance Management & Schedules">
+                    <i class="fa-solid fa-wrench"></i>
+                    <span>Maintenance</span>
+                </a>
+                <a href="/notifications" class="nav-item {% if active_page == 'notifications' %}active{% endif %}" title="Notifications & System Alerts Center">
+                    <i class="fa-solid fa-bell"></i>
+                    <span>Notifications</span>
+                    <span id="nav-notif-badge" class="badge-notif {% if unread_notifications_count == 0 %}hidden{% endif %}">{{ unread_notifications_count }}</span>
+                </a>
+                <a href="/reports" class="nav-item {% if active_page == 'reports' %}active{% endif %}" title="Reports, Analytics & Data Export">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <span>Reports</span>
+                </a>
+                <a href="/network" class="nav-item {% if active_page == 'network' %}active{% endif %}">
+                    <i class="fa-solid fa-network-wired"></i>
+                    <span>Network</span>
+                </a>
+                <a href="/assets" class="nav-item {% if active_page == 'assets' %}active{% endif %}">
+                    <i class="fa-solid fa-boxes-stacked"></i>
+                    <span>Assets</span>
+                </a>
+            </nav>
+
+            <!-- Status Badges & User Profile Controls -->
+            <div class="nav-actions">
+                <!-- MQTT Status -->
+                <div id="mqtt-status-pill" class="status-pill status-pill-success" title="MQTT Broker Status">
+                    <span class="status-dot pulse"></span>
+                    <span id="mqtt-status-text">MQTT 1883</span>
+                </div>
+
+                <!-- Notifications Pill -->
+                <a href="/notifications" id="nav-notif-pill" class="status-pill" style="text-decoration: none; cursor: pointer;" title="Open Notifications Center">
+                    <i class="fa-solid fa-bell text-cyan"></i>
+                    <span id="nav-notif-pill-count">{{ unread_notifications_count }}</span>
+                </a>
+
+                <!-- User Role Pill -->
+                <a href="/login" class="user-menu-pill" title="User Profile & Role Management: Click to Switch User / Log In">
+                    <i class="fa-solid fa-circle-user text-cyan"></i>
+                    <span class="user-name-text">{{ current_user.full_name.split(' ')[0] }}</span>
+                    <span class="role-tag role-tag-{{ current_user.role.lower() }}">{{ current_user.role }}</span>
+                </a>
+
+                {% if current_user.role == 'ADMIN' %}
+                <!-- Quick Move Button (Admin Only) -->
+                <button class="btn btn-primary btn-sm glow-btn" onclick="openDemoModal()" title="Live Teleportation / Scenario Demo">
+                    <i class="fa-solid fa-arrows-turn-to-dots"></i>
+                    <span>Move</span>
+                </button>
+                {% endif %}
+
+                <!-- Audio Alert Toggle -->
+                <button id="audio-toggle-btn" class="icon-btn" onclick="toggleAudioChime()" title="Toggle Alert Sound Chime">
+                    <i class="fa-solid fa-volume-high" id="audio-icon"></i>
+                </button>
+
+                <!-- Active Alert Pill -->
+                <div id="nav-alert-pill" class="alert-pill-badge" onclick="scrollToAlerts()" title="Active Security / Geofence Alerts">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span id="nav-alert-count">0</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Global Toast Notification Center -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Live Demo Modal (Accessible from any page for presentation) -->
+    <div id="demo-modal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="fa-solid fa-satellite-dish text-cyan"></i>
+                    <span>Live Operations & Simulation Control</span>
+                </div>
+                <button class="close-btn" onclick="closeDemoModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-desc">
+                    Interactive controls for real-time asset relocation, telemetry updates, and perimeter security testing.
+                </p>
+
+                <!-- Manual Relocation Tool -->
+                <div class="demo-section">
+                    <div class="section-title"><i class="fa-solid fa-arrows-up-down-left-right"></i> Manual Asset Teleportation</div>
+                    <div class="move-tool-grid">
+                        <select id="modal-asset-select" class="form-select">
+                            <option value="">Select Asset to Relocate...</option>
+                            <option value="AST-VENT-01">[AST-VENT-01] Hamilton-C6 Ventilator</option>
+                            <option value="AST-VENT-02">[AST-VENT-02] Dräger Evita V800 Ventilator</option>
+                            <option value="AST-DEFIB-01">[AST-DEFIB-01] Zoll R Defibrillator</option>
+                            <option value="AST-DEFIB-02">[AST-DEFIB-02] Philips Defibrillator</option>
+                            <option value="AST-MON-01">[AST-MON-01] Mindray N17 Monitor</option>
+                            <option value="AST-MON-02">[AST-MON-02] GE Carescape B650 Monitor</option>
+                            <option value="AST-PUMP-01">[AST-PUMP-01] Alaris Infusion Pump</option>
+                            <option value="AST-PUMP-02">[AST-PUMP-02] Baxter Sigma Infusion Pump</option>
+                            <option value="AST-ECG-01">[AST-ECG-01] GE MAC 2000 ECG</option>
+                            <option value="AST-ECG-02">[AST-ECG-02] Philips PageWriter ECG</option>
+                            <option value="AST-WCHR-01">[AST-WCHR-01] Stryker Wheelchair</option>
+                            <option value="AST-XRAY-01">[AST-XRAY-01] Mobile X-Ray Unit</option>
+                        </select>
+                        <select id="modal-room-select" class="form-select">
+                            <option value="">Select Target Destination...</option>
+                            <option value="ICU">ICU</option>
+                            <option value="ER">Emergency Room</option>
+                            <option value="OT">Operation Theatre</option>
+                            <option value="GEN">General Ward</option>
+                            <option value="CARDIO">Cardiology</option>
+                            <option value="PHARM">Pharmacy</option>
+                            <option value="STORAGE">Storage</option>
+                        </select>
+                        <button class="btn btn-cyan" onclick="executeManualMove()">
+                            <i class="fa-solid fa-paper-plane"></i> Move Asset Now
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Pre-configured Demo Scenarios -->
+                <div class="demo-section">
+                    <div class="section-title"><i class="fa-solid fa-film"></i> One-Click Classroom Scenarios</div>
+                    <div class="scenario-grid">
+                        <button class="scenario-card danger-card" onclick="runDemoScenario('icu_breach')">
+                            <div class="scenario-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                            <div class="scenario-info">
+                                <div class="scenario-title">1. ICU Ventilator Geofence Breach</div>
+                                <div class="scenario-text">Moves ICU Ventilator to Exit Gate. Triggers instant perimeter alarm & packet log.</div>
+                            </div>
+                        </button>
+
+                        <button class="scenario-card info-card" onclick="runDemoScenario('emergency_transfer')">
+                            <div class="scenario-icon"><i class="fa-solid fa-truck-medical"></i></div>
+                            <div class="scenario-info">
+                                <div class="scenario-title">2. Emergency Trauma Transfer</div>
+                                <div class="scenario-text">Rapid transfer of Defibrillator to OT for urgent surgery. Updates MQTT telemetry.</div>
+                            </div>
+                        </button>
+
+                        <button class="scenario-card warning-card" onclick="runDemoScenario('low_battery')">
+                            <div class="scenario-icon"><i class="fa-solid fa-battery-quarter"></i></div>
+                            <div class="scenario-info">
+                                <div class="scenario-title">3. Low Battery Threshold Alert</div>
+                                <div class="scenario-text">Simulates tag battery falling to 12%. Triggers low-battery notification.</div>
+                            </div>
+                        </button>
+
+                        <button class="scenario-card purple-card" onclick="runDemoScenario('link_failover')">
+                            <div class="scenario-icon"><i class="fa-solid fa-network-wired"></i></div>
+                            <div class="scenario-info">
+                                <div class="scenario-title">4. Switch Link Failover & Gateway Buffer</div>
+                                <div class="scenario-text">Simulates gateway uplink break. Shows offline buffer and secondary link recovery.</div>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Reset Demo State -->
+                <div class="demo-footer">
+                    <button class="btn btn-danger-outline" onclick="runDemoScenario('reset')">
+                        <i class="fa-solid fa-rotate-left"></i> Reset Demo to Initial Baseline
+                    </button>
+                    <button class="btn btn-secondary" onclick="closeDemoModal()">Close Panel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Block -->
+    <main class="main-content flex-1">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+        <div class="footer-container">
+            <div class="footer-left">
+                <span>Smart Hospital Asset Tracking System (RTLS)</span>
+                <span class="footer-divider">•</span>
+                <span>Enterprise Medical IoT & Real-Time Location Services</span>
+            </div>
+            <div class="footer-center">
+                <span>Location Engine: Multilateration & Log-Distance RSSI Model</span>
+            </div>
+            <div class="footer-right">
+                <span class="badge-vlan">IoT VLAN 20 (10.20.0.0/22)</span>
+                <span class="badge-mqtt">MQTT Port 1883</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Global Session & Role Context -->
+    <script>
+        window.CURRENT_USER = {{ current_user | tojson | safe }};
+    </script>
+    <!-- Shared Application Scripts -->
+    <script src="{{ url_for('static', filename='js/demo.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
+

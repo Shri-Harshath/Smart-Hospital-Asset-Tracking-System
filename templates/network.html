@@ -1,0 +1,504 @@
+{% extends "base.html" %}
+
+{% block title %}Computer Networks Architecture | Smart Hospital RTLS{% endblock %}
+
+{% block content %}
+<div class="network-page">
+
+    <!-- Page Header Banner -->
+    <div style="margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <h1 style="font-size: 1.6rem; font-weight: 800; background: linear-gradient(to right, #38bdf8, #2dd4bf); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                Hospital Computer Networks Architecture
+            </h1>
+            <p style="font-size: 0.85rem; color: #94a3b8; margin-top: 0.25rem;">
+                Implementation of Three-Tier Hierarchical Topology, VLAN 20 Subnetting (10.20.0.0/22), MQTT Protocol Stack & Network Security.
+            </p>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+            <button class="btn btn-primary btn-sm" onclick="openDemoModal()">
+                <i class="fa-solid fa-play"></i> Test Network Actions
+            </button>
+        </div>
+    </div>
+
+    <!-- SECTION 1: Three-Tier Hierarchical Network Topology -->
+    <div class="card net-section">
+        <div class="card-header">
+            <div class="card-title">
+                <i class="fa-solid fa-sitemap text-cyan"></i>
+                <span>1. Three-Tier Hierarchical Network Topology (Core, Distribution & Access Layers)</span>
+            </div>
+            <span class="status-pill status-pill-success" style="font-size: 0.72rem;">IEEE 802.3af PoE Enabled</span>
+        </div>
+        <div class="card-body">
+            <div class="topology-box">
+
+                <!-- Tier 0: Next-Gen Firewall & Internet Gateway -->
+                <div class="topo-tier" style="border-color: #ef4444; background: rgba(239, 68, 68, 0.05);">
+                    <div class="tier-title" style="color: #f87171;">
+                        <span><i class="fa-solid fa-shield-halved"></i> Perimeter Security Tier (Stateful Inspection & Inter-VLAN ACLs)</span>
+                        <span style="font-family: monospace; font-size: 0.7rem; color: #94a3b8;">Default Gateway: 10.0.0.1</span>
+                    </div>
+                    <div class="tier-device-row">
+                        <div class="net-device" style="border-color: #ef4444;">
+                            <div class="net-device-icon" style="color: #f87171;"><i class="fa-solid fa-fire"></i></div>
+                            <div class="net-device-name">Next-Gen Hospital Firewall</div>
+                            <div class="net-device-ip">10.0.0.1</div>
+                            <div class="net-device-role">ACL Rules · NAT · IPSec VPN · RADIUS Auth</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Downlink Connector -->
+                <div style="text-align: center; color: #64748b; margin: -0.5rem 0 0.5rem;"><i class="fa-solid fa-arrows-up-down"></i> Dual 10 Gbps Redundant Trunks</div>
+
+                <!-- Tier 1: Core Layer -->
+                <div class="topo-tier" style="border-color: #3b82f6; background: rgba(59, 130, 246, 0.05);">
+                    <div class="tier-title">
+                        <span><i class="fa-solid fa-network-wired"></i> Core Layer (High-Speed Backbone Switching)</span>
+                        <span style="font-family: monospace; font-size: 0.7rem; color: #94a3b8;">VRRP High Availability Active/Standby</span>
+                    </div>
+                    <div class="tier-device-row">
+                        <div class="net-device">
+                            <div class="net-device-icon" style="color: #60a5fa;"><i class="fa-solid fa-server"></i></div>
+                            <div class="net-device-name">CORE-SW-01 (Primary)</div>
+                            <div class="net-device-ip">10.0.1.1 (VLAN 30)</div>
+                            <div class="net-device-role">10G SFP+ Fiber Backbone</div>
+                        </div>
+                        <div style="color: #38bdf8; font-size: 0.8rem; font-family: monospace;">&larr; VRRP Link &rarr;</div>
+                        <div class="net-device">
+                            <div class="net-device-icon" style="color: #60a5fa;"><i class="fa-solid fa-server"></i></div>
+                            <div class="net-device-name">CORE-SW-02 (Redundant)</div>
+                            <div class="net-device-ip">10.0.1.2 (VLAN 30)</div>
+                            <div class="net-device-role">Hot-Standby Failover</div>
+                        </div>
+                        <div class="net-device" style="border-color: #10b981;">
+                            <div class="net-device-icon" style="color: #34d399;"><i class="fa-solid fa-database"></i></div>
+                            <div class="net-device-name">MQTT Broker & DB Server</div>
+                            <div class="net-device-ip">10.30.0.15:1883</div>
+                            <div class="net-device-role">VLAN 30 (Servers/Admin)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Downlink Connector -->
+                <div style="text-align: center; color: #64748b; margin: -0.5rem 0 0.5rem;"><i class="fa-solid fa-arrows-up-down"></i> 802.1Q VLAN Trunk Links</div>
+
+                <!-- Tier 2: Distribution Layer -->
+                <div class="topo-tier" style="border-color: #06b6d4; background: rgba(6, 182, 212, 0.05);">
+                    <div class="tier-title" style="color: #22d3ee;">
+                        <span><i class="fa-solid fa-route"></i> Distribution Layer (Building Aggregation & Routing)</span>
+                        <span style="font-family: monospace; font-size: 0.7rem; color: #94a3b8;">Inter-VLAN Policy Enforcement</span>
+                    </div>
+                    <div class="tier-device-row">
+                        <div class="net-device">
+                            <div class="net-device-icon" style="color: #22d3ee;"><i class="fa-solid fa-shuffle"></i></div>
+                            <div class="net-device-name">DIST-SW-BLKA</div>
+                            <div class="net-device-ip">10.0.2.1 (Block A)</div>
+                            <div class="net-device-role">Aggregates ICU, ER, OT</div>
+                        </div>
+                        <div class="net-device">
+                            <div class="net-device-icon" style="color: #22d3ee;"><i class="fa-solid fa-shuffle"></i></div>
+                            <div class="net-device-name">DIST-SW-BLKB</div>
+                            <div class="net-device-ip">10.0.2.2 (Block B)</div>
+                            <div class="net-device-role">Aggregates Wards & Depot</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Downlink Connector -->
+                <div style="text-align: center; color: #64748b; margin: -0.5rem 0 0.5rem;"><i class="fa-solid fa-arrows-up-down"></i> Cat6 UTP 1000BASE-T + 802.3af PoE</div>
+
+                <!-- Tier 3: Access Layer (Star Topology per Floor) -->
+                <div class="topo-tier" style="border-color: #10b981; background: rgba(16, 185, 129, 0.05);">
+                    <div class="tier-title" style="color: #34d399;">
+                        <span><i class="fa-solid fa-diagram-project"></i> Access Layer (Star Topology · Power over Ethernet to Gateways)</span>
+                        <span style="font-family: monospace; font-size: 0.7rem; color: #94a3b8;">Floor 3 Access Switch: ACC-SW-FL3</span>
+                    </div>
+                    <div class="tier-device-row">
+                        <div class="net-device" style="min-width: 110px;">
+                            <div class="net-device-icon" style="color: #38bdf8;"><i class="fa-solid fa-wifi"></i></div>
+                            <div class="net-device-name">GW-ICU-01</div>
+                            <div class="net-device-ip">10.20.1.10</div>
+                            <div class="net-device-role">Port Gi0/1 (VLAN 20)</div>
+                        </div>
+                        <div class="net-device" style="min-width: 110px;">
+                            <div class="net-device-icon" style="color: #38bdf8;"><i class="fa-solid fa-wifi"></i></div>
+                            <div class="net-device-name">GW-ER-01</div>
+                            <div class="net-device-ip">10.20.1.11</div>
+                            <div class="net-device-role">Port Gi0/2 (VLAN 20)</div>
+                        </div>
+                        <div class="net-device" style="min-width: 110px;">
+                            <div class="net-device-icon" style="color: #38bdf8;"><i class="fa-solid fa-wifi"></i></div>
+                            <div class="net-device-name">GW-OT-01</div>
+                            <div class="net-device-ip">10.20.1.12</div>
+                            <div class="net-device-role">Port Gi0/3 (VLAN 20)</div>
+                        </div>
+                        <div class="net-device" style="min-width: 110px;">
+                            <div class="net-device-icon" style="color: #38bdf8;"><i class="fa-solid fa-wifi"></i></div>
+                            <div class="net-device-name">GW-GEN-01</div>
+                            <div class="net-device-ip">10.20.1.13</div>
+                            <div class="net-device-role">Port Gi0/4 (General Ward)</div>
+                        </div>
+                        <div class="net-device" style="min-width: 110px;">
+                            <div class="net-device-icon" style="color: #38bdf8;"><i class="fa-solid fa-wifi"></i></div>
+                            <div class="net-device-name">GW-CARDIO-01</div>
+                            <div class="net-device-ip">10.20.1.14</div>
+                            <div class="net-device-role">Port Gi0/5 (Cardiology)</div>
+                        </div>
+                        <div class="net-device" style="min-width: 110px;">
+                            <div class="net-device-icon" style="color: #38bdf8;"><i class="fa-solid fa-wifi"></i></div>
+                            <div class="net-device-name">GW-PHARM-01</div>
+                            <div class="net-device-ip">10.20.1.15</div>
+                            <div class="net-device-role">Port Gi0/6 (Pharmacy)</div>
+                        </div>
+                        <div class="net-device" style="min-width: 110px;">
+                            <div class="net-device-icon" style="color: #38bdf8;"><i class="fa-solid fa-wifi"></i></div>
+                            <div class="net-device-name">GW-STORAGE-01</div>
+                            <div class="net-device-ip">10.20.1.16</div>
+                            <div class="net-device-role">Port Gi0/7 (Storage)</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 2 & 3: IP Subnetting & VLAN Segmentation -->
+    <div class="net-grid-2 net-section">
+
+        <!-- SECTION 2: Subnetting Calculator for VLAN 20 (10.20.0.0/22) -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fa-solid fa-calculator text-cyan"></i>
+                    <span>2. IP Subnetting Deep Dive: IoT VLAN 20 (10.20.0.0/22)</span>
+                </div>
+                <span class="status-pill status-pill-success" style="font-size: 0.7rem;">1,022 Usable Hosts</span>
+            </div>
+            <div class="card-body">
+                <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.85rem;">
+                    Subnetting allocated for the hospital infrastructure. A CIDR <code>/22</code> provides 1,024 total IP addresses, accommodating hundreds of BLE gateways, Wi-Fi medical tags, and smart hospital sensors.
+                </p>
+
+                <!-- Subnet Bit Octet Breakdown -->
+                <div class="subnet-bit-grid">
+                    <div class="octet-box">
+                        <div style="font-size: 0.65rem; color: #94a3b8;">Octet 1 (Network)</div>
+                        <div class="octet-val">255</div>
+                        <div class="octet-binary">11111111</div>
+                    </div>
+                    <div class="octet-box">
+                        <div style="font-size: 0.65rem; color: #94a3b8;">Octet 2 (Network)</div>
+                        <div class="octet-val">255</div>
+                        <div class="octet-binary">11111111</div>
+                    </div>
+                    <div class="octet-box" style="border-color: #38bdf8;">
+                        <div style="font-size: 0.65rem; color: #38bdf8;">Octet 3 (6 Net / 2 Host)</div>
+                        <div class="octet-val">252</div>
+                        <div class="octet-binary"><span style="color: #38bdf8;">111111</span><span style="color: #fbbf24;">00</span></div>
+                    </div>
+                    <div class="octet-box" style="border-color: #fbbf24;">
+                        <div style="font-size: 0.65rem; color: #fbbf24;">Octet 4 (8 Host Bits)</div>
+                        <div class="octet-val">0</div>
+                        <div class="octet-binary" style="color: #fbbf24;">00000000</div>
+                    </div>
+                </div>
+
+                <!-- Subnet Technical Table -->
+                <table class="data-table" style="margin-bottom: 1rem;">
+                    <tr><td style="color: #94a3b8; width: 45%;">Network Address:</td><td id="net-address" style="font-weight: 700; color: #38bdf8;">10.20.0.0</td></tr>
+                    <tr><td style="color: #94a3b8;">CIDR Prefix & Mask:</td><td><span id="net-cidr">/22</span> &middot; <span id="net-mask">255.255.252.0</span></td></tr>
+                    <tr><td style="color: #94a3b8;">Wildcard Mask:</td><td id="net-wildcard" style="font-family: monospace;">0.0.3.255</td></tr>
+                    <tr><td style="color: #94a3b8;">Total / Usable Hosts:</td><td><span id="net-total-hosts">1,024</span> total &middot; <strong id="net-usable-hosts" style="color: #34d399;">1,022</strong> usable</td></tr>
+                    <tr><td style="color: #94a3b8;">First Usable Host (Gateway):</td><td id="net-first-ip" style="font-family: monospace;">10.20.0.1</td></tr>
+                    <tr><td style="color: #94a3b8;">Last Usable Host:</td><td id="net-last-ip" style="font-family: monospace;">10.20.3.254</td></tr>
+                    <tr><td style="color: #94a3b8;">Directed Broadcast:</td><td id="net-broadcast" style="font-family: monospace; color: #f87171;">10.20.3.255</td></tr>
+                </table>
+
+                <!-- Interactive Subnet Evaluator -->
+                <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.85rem;">
+                    <div style="font-size: 0.78rem; font-weight: 700; margin-bottom: 0.4rem; color: #f1f5f9;">
+                        <i class="fa-solid fa-magnifying-glass"></i> Interactive Subnet IP Validator:
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem;">
+                        <input type="text" id="test-ip-input" class="form-input" value="10.20.1.10" placeholder="e.g. 10.20.1.15">
+                        <button class="btn btn-sm btn-cyan" onclick="testIpInSubnet()">Validate IP</button>
+                    </div>
+                    <div id="test-ip-result" style="font-size: 0.75rem;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 3: VLAN Segmentation & Firewall ACL Matrix -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fa-solid fa-layer-group text-cyan"></i>
+                    <span>3. IEEE 802.1Q VLAN Segmentation & Firewall ACLs</span>
+                </div>
+                <span class="status-pill status-pill-success" style="font-size: 0.7rem;">Zero-Trust Isolation</span>
+            </div>
+            <div class="card-body">
+                <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.85rem;">
+                    Hospital VLAN segmentation table. Critical medical equipment and IoT gateways are isolated from Guest Wi-Fi to prevent cyberattacks and unauthorized interference.
+                </p>
+
+                <!-- VLAN Table -->
+                <table class="data-table" style="margin-bottom: 1rem;">
+                    <thead>
+                        <tr>
+                            <th>VLAN</th>
+                            <th>Designation</th>
+                            <th>Subnet CIDR</th>
+                            <th>Security Level</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span style="font-weight: 700; color: #60a5fa;">VLAN 10</span></td>
+                            <td>Clinical Devices & Workstations</td>
+                            <td><code>10.10.0.0/24</code></td>
+                            <td><span style="color: #60a5fa;">High (EHR Access)</span></td>
+                        </tr>
+                        <tr style="background: rgba(6, 182, 212, 0.08);">
+                            <td><span style="font-weight: 700; color: #22d3ee;">VLAN 20</span></td>
+                            <td><strong>IoT Gateways & Asset Tags</strong></td>
+                            <td><code>10.20.0.0/22</code></td>
+                            <td><span style="color: #22d3ee; font-weight: 700;">Isolated (RTLS Only)</span></td>
+                        </tr>
+                        <tr>
+                            <td><span style="font-weight: 700; color: #34d399;">VLAN 30</span></td>
+                            <td>Servers & Hospital Administration</td>
+                            <td><code>10.30.0.0/24</code></td>
+                            <td><span style="color: #34d399;">Restricted Core</span></td>
+                        </tr>
+                        <tr>
+                            <td><span style="font-weight: 700; color: #f87171;">VLAN 40</span></td>
+                            <td>Guest Wi-Fi (Patients / Visitors)</td>
+                            <td><code>10.40.0.0/24</code></td>
+                            <td><span style="color: #f87171;">Untrusted (Internet Only)</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <!-- Interactive Firewall ACL Tester -->
+                <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.85rem;">
+                    <div style="font-size: 0.78rem; font-weight: 700; margin-bottom: 0.5rem; color: #f1f5f9;">
+                        <i class="fa-solid fa-shield-halved text-cyan"></i> Interactive Firewall ACL Packet Routing Tester:
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 0.5rem; margin-bottom: 0.5rem;">
+                        <div>
+                            <label style="font-size: 0.68rem; color: #94a3b8;">Source VLAN</label>
+                            <select id="test-src-vlan" class="form-select">
+                                <option value="40">VLAN 40 (Guest Wi-Fi)</option>
+                                <option value="20" selected>VLAN 20 (IoT Gateway)</option>
+                                <option value="10">VLAN 10 (Clinical Workstation)</option>
+                                <option value="30">VLAN 30 (Location Server)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size: 0.68rem; color: #94a3b8;">Destination VLAN</label>
+                            <select id="test-dst-vlan" class="form-select">
+                                <option value="30" selected>VLAN 30 (MQTT Broker)</option>
+                                <option value="20">VLAN 20 (IoT Gateway)</option>
+                                <option value="10">VLAN 10 (Clinical Devices)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size: 0.68rem; color: #94a3b8;">Port</label>
+                            <select id="test-port" class="form-select">
+                                <option value="1883" selected>1883 (MQTT)</option>
+                                <option value="8883">8883 (MQTT/TLS)</option>
+                                <option value="80">80 (HTTP)</option>
+                                <option value="443">443 (HTTPS)</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; align-items: flex-end;">
+                            <button class="btn btn-cyan btn-sm" onclick="runVlanTest()" style="height: 34px;">
+                                <i class="fa-solid fa-paper-plane"></i> Send
+                            </button>
+                        </div>
+                    </div>
+                    <div id="vlan-test-result">
+                        <div style="font-size: 0.75rem; color: #94a3b8; font-style: italic;">
+                            Click "Send" to simulate 802.1Q tagged frame routing against firewall access rules.
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 4 & 5: Protocol Stack Deep Dive & Security Architecture -->
+    <div class="net-grid-2 net-section">
+
+        <!-- SECTION 4: Protocol Stack Deep Dive (Slide 6) -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fa-solid fa-bars-staggered text-cyan"></i>
+                    <span>4. End-to-End Protocol Stack Implementation</span>
+                </div>
+                <span class="status-pill status-pill-success" style="font-size: 0.7rem;">5-Layer Model</span>
+            </div>
+            <div class="card-body">
+                <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.85rem;">
+                    Protocol mapping across the 5 network layers, detailing each protocol's specific role in the hospital asset tracking architecture.
+                </p>
+
+                <!-- Layer 5: Application -->
+                <div class="proto-layer-card">
+                    <div class="layer-num-badge">L5</div>
+                    <div style="flex: 1;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span class="layer-name">Application Layer</span>
+                            <span class="layer-protocols">MQTT · HTTP/REST · HL7 FHIR</span>
+                        </div>
+                        <div class="layer-desc">
+                            <strong>MQTT v3.1.1</strong> publishes lightweight JSON telemetry. <strong>REST API</strong> delivers dashboard state. <strong>HL7 FHIR</strong> integrates with electronic health records.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Layer 4: Transport -->
+                <div class="proto-layer-card">
+                    <div class="layer-num-badge">L4</div>
+                    <div style="flex: 1;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span class="layer-name">Transport Layer</span>
+                            <span class="layer-protocols">TCP (MQTT, HTTPS) · UDP (CoAP)</span>
+                        </div>
+                        <div class="layer-desc">
+                            <strong>TCP</strong> provides 3-way handshake, connection-oriented byte stream, and guaranteed sequence delivery. Crucial for life-critical equipment tracking!
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Layer 3: Network -->
+                <div class="proto-layer-card">
+                    <div class="layer-num-badge">L3</div>
+                    <div style="flex: 1;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span class="layer-name">Network Layer</span>
+                            <span class="layer-protocols">IPv4 / IPv6 · 6LoWPAN · ICMP</span>
+                        </div>
+                        <div class="layer-desc">
+                            Hierarchical addressing with <strong>10.20.0.0/22</strong>. Static DHCP reservations for BLE gateways. Inter-VLAN routing via Core L3 Switch.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Layer 2: Data Link -->
+                <div class="proto-layer-card">
+                    <div class="layer-num-badge">L2</div>
+                    <div style="flex: 1;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span class="layer-name">Data Link Layer</span>
+                            <span class="layer-protocols">IEEE 802.3 (Ethernet) · IEEE 802.15.1 (BLE)</span>
+                        </div>
+                        <div class="layer-desc">
+                            Ethernet frames encapsulated with <strong>802.1Q VLAN headers</strong>. Gateway converts <strong>BLE advertisement packets</strong> into Ethernet frames.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Layer 1: Physical -->
+                <div class="proto-layer-card">
+                    <div class="layer-num-badge">L1</div>
+                    <div style="flex: 1;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span class="layer-name">Physical Layer</span>
+                            <span class="layer-protocols">2.4 GHz ISM Band · Cat6 UTP (802.3af PoE)</span>
+                        </div>
+                        <div class="layer-desc">
+                            BLE 5.0 beacons broadcast on channels 37, 38, 39. Ceiling gateways powered over Ethernet cables via 48V PoE switches.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TCP vs UDP Comparison Box -->
+                <div style="margin-top: 1rem; background: rgba(15, 23, 42, 0.7); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.85rem;">
+                    <div style="font-weight: 700; font-size: 0.8rem; color: #38bdf8; margin-bottom: 0.35rem;">
+                        <i class="fa-solid fa-code-compare"></i> Engineering Architecture Insight: Why MQTT uses TCP over UDP
+                    </div>
+                    <div style="font-size: 0.75rem; color: #cbd5e1; line-height: 1.4;">
+                        MQTT runs on <strong>TCP (Port 1883 / 8883)</strong> because medical asset tracking requires <em>lossless, ordered, and guaranteed delivery</em> (QoS 1). If a ventilator is unplugged or wheeled past an exit door, a dropped UDP packet could allow equipment theft to go unnoticed!
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 5: Network Security & Encryption Architecture (Slide 8) -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fa-solid fa-lock text-cyan"></i>
+                    <span>5. Hospital Network Security & Privacy Architecture</span>
+                </div>
+                <span class="status-pill status-pill-success" style="font-size: 0.7rem;">WPA3 + TLS 1.3</span>
+            </div>
+            <div class="card-body">
+                <p style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.85rem;">
+                    Security mechanisms implemented to protect medical telemetry, prevent packet eavesdropping, and ensure compliance with healthcare cybersecurity standards.
+                </p>
+
+                <!-- Security Feature 1: WPA3-Enterprise & 802.1X -->
+                <div style="margin-bottom: 0.85rem; padding: 0.75rem; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                        <i class="fa-solid fa-key text-cyan"></i>
+                        <span style="font-weight: 700; font-size: 0.82rem; color: #f1f5f9;">WPA3-Enterprise & 802.1X / RADIUS Authentication</span>
+                    </div>
+                    <div style="font-size: 0.75rem; color: #94a3b8; line-height: 1.35;">
+                        Gateways authenticate using <strong>EAP-TLS certificates</strong> via a central RADIUS server. Rogue access points and spoofed gateways are blocked at the switch port before receiving an IP address.
+                    </div>
+                </div>
+
+                <!-- Security Feature 2: MQTT over TLS (Port 8883) -->
+                <div style="margin-bottom: 0.85rem; padding: 0.75rem; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                        <i class="fa-solid fa-shield-virus" style="color: #34d399;"></i>
+                        <span style="font-weight: 700; font-size: 0.82rem; color: #f1f5f9;">MQTT Payload Encryption via TLS 1.3 (Port 8883)</span>
+                    </div>
+                    <div style="font-size: 0.75rem; color: #94a3b8; line-height: 1.35;">
+                        Telemetry payloads are encrypted using <strong>AES-256-GCM</strong>. Prevents man-in-the-middle sniffing of equipment locations and battery levels on the hospital LAN.
+                    </div>
+                </div>
+
+                <!-- Security Feature 3: Patient Privacy & Zero PHI on Tags -->
+                <div style="margin-bottom: 0.85rem; padding: 0.75rem; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                        <i class="fa-solid fa-user-shield" style="color: #a78bfa;"></i>
+                        <span style="font-weight: 700; font-size: 0.82rem; color: #f1f5f9;">Zero Protected Health Information (PHI) on Radio Broadcasts</span>
+                    </div>
+                    <div style="font-size: 0.75rem; color: #94a3b8; line-height: 1.35;">
+                        BLE tags broadcast ONLY an anonymous Tag ID (e.g. <code>TAG-BLE-701</code>) and RSSI. No patient names, diagnoses, or clinical telemetry are transmitted over the air.
+                    </div>
+                </div>
+
+                <!-- Security Feature 4: Redundancy & QoS Prioritization -->
+                <div style="padding: 0.75rem; background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: var(--radius-sm);">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+                        <i class="fa-solid fa-server" style="color: #fbbf24;"></i>
+                        <span style="font-weight: 700; font-size: 0.82rem; color: #f1f5f9;">Core Redundancy, QoS & Gateway Offline Buffering</span>
+                    </div>
+                    <div style="font-size: 0.75rem; color: #94a3b8; line-height: 1.35;">
+                        Differentiated Services Code Point (DSCP EF / Expedited Forwarding) gives ventilator packets priority over guest Wi-Fi. If a switch port drops, gateways buffer up to 1,000 packets in flash memory until reconnected.
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/network.js') }}"></script>
+{% endblock %}
+

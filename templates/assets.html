@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Asset Inventory & Maintenance | Smart Hospital RTLS{% endblock %}
+
+{% block extra_head %}
+<style>
+    .status-chip {
+        display: inline-block;
+        padding: 0.18rem 0.55rem;
+        border-radius: var(--radius-full);
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+    .status-badge-avail { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .status-badge-inuse { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.3); }
+    .status-badge-maint { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="assets-page">
+
+    <!-- Header Actions -->
+    <div style="margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <h1 style="font-size: 1.5rem; font-weight: 800; background: linear-gradient(to right, #38bdf8, #2dd4bf); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                Hospital Medical Asset Inventory & Telemetry
+            </h1>
+            <p style="font-size: 0.85rem; color: #94a3b8; margin-top: 0.2rem;">
+                Live radio telemetry, battery health monitor, preventative maintenance schedules, and assigned ward geofences.
+            </p>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+            <a href="/api/export/csv" class="btn btn-outline-cyan btn-sm" download>
+                <i class="fa-solid fa-file-csv"></i> Export Inventory CSV
+            </a>
+            <button class="btn btn-primary btn-sm" onclick="openDemoModal()">
+                <i class="fa-solid fa-arrows-up-down-left-right"></i> Relocate Equipment
+            </button>
+        </div>
+    </div>
+
+    <!-- Filter & Search Toolbar -->
+    <div class="card" style="margin-bottom: 1.5rem;">
+        <div class="card-body" style="padding: 1rem 1.25rem;">
+            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; gap: 0.75rem; align-items: center;">
+                <div>
+                    <input type="text" id="inventory-search" class="form-input" placeholder="Search by asset name, ID, model, or tag ID..." oninput="renderTable()">
+                </div>
+                <div>
+                    <select id="inventory-filter-cat" class="form-select" onchange="renderTable()">
+                        <option value="">All Categories</option>
+                        <option value="Ventilator">Ventilators</option>
+                        <option value="Defibrillator">Defibrillators</option>
+                        <option value="Patient Monitor">Patient Monitors</option>
+                        <option value="Infusion Pump">Infusion Pumps</option>
+                        <option value="ECG Machine">ECG Machines</option>
+                        <option value="Wheelchair">Wheelchairs</option>
+                        <option value="Portable X-Ray">Portable X-Ray</option>
+                    </select>
+                </div>
+                <div>
+                    <select id="inventory-filter-status" class="form-select" onchange="renderTable()">
+                        <option value="">All Statuses</option>
+                        <option value="Available">Available</option>
+                        <option value="In Use">In Use</option>
+                        <option value="Maintenance">Maintenance</option>
+                    </select>
+                </div>
+                <div>
+                    <select id="inventory-filter-room" class="form-select" onchange="renderTable()">
+                        <option value="">All Hospital Locations</option>
+                        <option value="ICU">ICU</option>
+                        <option value="ER">Emergency Room</option>
+                        <option value="OT">Operation Theatre</option>
+                        <option value="GEN">General Ward</option>
+                        <option value="CARDIO">Cardiology</option>
+                        <option value="PHARM">Pharmacy</option>
+                        <option value="STORAGE">Storage</option>
+                    </select>
+                </div>
+                <div>
+                    <span id="inventory-count-badge" class="status-pill status-pill-success" style="font-size: 0.75rem; white-space: nowrap;">
+                        12 Assets
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inventory Data Table -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">
+                <i class="fa-solid fa-list-check text-cyan"></i>
+                <span>Tracked Medical Assets (BLE 5.0 Active Telemetry)</span>
+            </div>
+            <span style="font-size: 0.75rem; color: #94a3b8;">Refreshed every 3 seconds</span>
+        </div>
+        <div class="card-body" style="padding: 0; overflow-x: auto;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Asset ID</th>
+                        <th>Medical Equipment & Model</th>
+                        <th>Category</th>
+                        <th>BLE Tag & MAC</th>
+                        <th>Current Location & Base Ward</th>
+                        <th>Battery Health</th>
+                        <th>Signal RSSI (Dist)</th>
+                        <th>Clinical Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="inventory-table-body">
+                    <!-- Populated dynamically via inventory.js -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/inventory.js') }}"></script>
+{% endblock %}
+

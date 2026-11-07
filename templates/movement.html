@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Equipment Movement | Smart Hospital RTLS{% endblock %}
+
+{% block content %}
+<div class="movement-page" style="max-width: 1300px; margin: 0 auto;">
+
+    <!-- Page Header Banner -->
+    <div style="margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <h1 style="font-size: 1.6rem; font-weight: 800; background: linear-gradient(to right, #38bdf8, #2dd4bf); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                Manage Equipment Movement
+            </h1>
+            <p style="font-size: 0.85rem; color: #94a3b8; margin-top: 0.25rem;">
+                Manual equipment relocation controller. Equipment moves <strong>only</strong> when you explicitly click the Move Equipment button.
+            </p>
+        </div>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <span class="status-pill" style="background: rgba(6, 182, 212, 0.12); border-color: rgba(6, 182, 212, 0.35); color: #38bdf8;">
+                <i class="fa-solid fa-lock"></i> Manual Mode Active (Zero Auto-Jumping)
+            </span>
+            <a href="/" class="btn btn-secondary btn-sm">
+                <i class="fa-solid fa-map"></i> View on Live Map
+            </a>
+        </div>
+    </div>
+
+    <!-- MAIN EQUIPMENT MOVEMENT CONTROLLER CARD -->
+    <div class="card" style="margin-bottom: 2rem; border-color: rgba(6, 182, 212, 0.35); box-shadow: 0 4px 25px rgba(6, 182, 212, 0.1);">
+        <div class="card-header" style="background: rgba(6, 182, 212, 0.08);">
+            <div class="card-title">
+                <i class="fa-solid fa-arrows-up-down-left-right text-cyan"></i>
+                <span>Equipment Relocation Control Panel</span>
+            </div>
+            <span style="font-size: 0.75rem; color: #94a3b8;">
+                Step 1: Choose Equipment &rarr; Step 2: Choose Destination &rarr; Step 3: Click Move
+            </span>
+        </div>
+        <div class="card-body" style="padding: 1.5rem;">
+            {% if current_user.role != 'ADMIN' %}
+            <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: var(--radius-sm); padding: 0.85rem 1rem; margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.75rem;">
+                <i class="fa-solid fa-shield-halved text-danger" style="font-size: 1.25rem;"></i>
+                <div>
+                    <div style="font-weight: 700; color: #f87171; font-size: 0.88rem;">Restricted Operation: Admin Only</div>
+                    <div style="font-size: 0.78rem; color: #cbd5e1;">Your current role is <strong>{{ current_user.role }}</strong>. Only Hospital Administrators have permission to manually move equipment. You have view-only access to equipment locations and history. To request equipment transfer, please use the <a href="/requests" style="color: #38bdf8; text-decoration: underline;">Equipment Requests</a> page.</div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem;">
+
+                <!-- 1. Equipment Dropdown -->
+                <div>
+                    <label for="manage-equipment-select" style="display: block; font-size: 0.82rem; font-weight: 700; color: #f1f5f9; margin-bottom: 0.5rem;">
+                        <i class="fa-solid fa-stethoscope text-cyan" style="margin-right: 4px;"></i> Select Equipment:
+                    </label>
+                    <select id="manage-equipment-select" class="form-select" onchange="onEquipmentSelected()" style="font-size: 0.9rem; padding: 0.65rem 0.85rem;">
+                        <option value="">Loading registered equipment...</option>
+                    </select>
+                    <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 0.35rem;">
+                        Select any of the 12 medical devices registered on the hospital IoT network.
+                    </div>
+                </div>
+
+                <!-- 2. "Move To" Destination Dropdown -->
+                <div>
+                    <label for="manage-destination-select" style="display: block; font-size: 0.82rem; font-weight: 700; color: #f1f5f9; margin-bottom: 0.5rem;">
+                        <i class="fa-solid fa-location-dot text-cyan" style="margin-right: 4px;"></i> Move To (Target Hospital Location):
+                    </label>
+                    <select id="manage-destination-select" class="form-select" style="font-size: 0.9rem; padding: 0.65rem 0.85rem;">
+                        <option value="">-- Select Destination Ward --</option>
+                        <option value="ICU">ICU (Intensive Care Unit)</option>
+                        <option value="ER">Emergency Room</option>
+                        <option value="OT">Operation Theatre</option>
+                        <option value="GEN">General Ward</option>
+                        <option value="CARDIO">Cardiology</option>
+                        <option value="PHARM">Pharmacy</option>
+                        <option value="STORAGE">Storage</option>
+                    </select>
+                    <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 0.35rem;">
+                        Equipment will be immediately transferred to the selected ward.
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- 3. Selected Equipment Details & Current Location Card -->
+            <div id="selected-equipment-info" style="background: rgba(15, 23, 42, 0.75); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.5rem;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.85rem; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 0.65rem;">
+                    <div>
+                        <span id="display-asset-name" style="font-size: 1.1rem; font-weight: 800; color: #f8fafc;">Hamilton-C6 Mechanical Ventilator</span>
+                        <span id="display-asset-id" style="font-family: monospace; font-size: 0.8rem; color: #38bdf8; margin-left: 0.5rem;">AST-VENT-01</span>
+                    </div>
+                    <div>
+                        <span id="display-status" class="status-chip status-badge-avail">Available</span>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    
+                    <!-- CURRENT LOCATION (PROMINENT BADGE) -->
+                    <div style="background: rgba(6, 182, 212, 0.12); border: 2px solid rgba(6, 182, 212, 0.4); border-radius: var(--radius-sm); padding: 0.75rem;">
+                        <div style="font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #38bdf8; margin-bottom: 0.2rem;">
+                            <i class="fa-solid fa-location-dot"></i> Current Physical Location (RTLS)
+                        </div>
+                        <div id="display-current-location" style="font-size: 1.25rem; font-weight: 800; color: #22d3ee;">
+                            ICU
+                        </div>
+                    </div>
+
+                    <!-- ASSIGNED LOCATION -->
+                    <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.75rem;">
+                        <div style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; margin-bottom: 0.2rem;">
+                            <i class="fa-solid fa-house-medical"></i> Home Ward (Geofence Base)
+                        </div>
+                        <div id="display-assigned-location" style="font-size: 1rem; font-weight: 700; color: #cbd5e1;">
+                            ICU
+                        </div>
+                    </div>
+
+                    <!-- CATEGORY & MODEL -->
+                    <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.75rem;">
+                        <div style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; margin-bottom: 0.2rem;">
+                            <i class="fa-solid fa-tag"></i> Category & Model
+                        </div>
+                        <div style="font-size: 0.88rem; font-weight: 700; color: #cbd5e1;">
+                            <span id="display-asset-category">Ventilator</span> &middot; <span id="display-asset-model" style="color: #94a3b8;">C6</span>
+                        </div>
+                    </div>
+
+                    <!-- BLE TAG ID & BATTERY -->
+                    <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.75rem;">
+                        <div style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; margin-bottom: 0.2rem;">
+                            <i class="fa-solid fa-battery-three-quarters"></i> Tag & Battery
+                        </div>
+                        <div style="font-size: 0.88rem; font-weight: 700; color: #cbd5e1;">
+                            <span id="display-battery" style="color: #34d399;">94%</span> &middot; <span id="display-asset-tag" style="font-family: monospace; font-size: 0.75rem; color: #94a3b8;">TAG-BLE-701</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- 4. "MOVE EQUIPMENT" ACTION BUTTON -->
+            <div style="display: flex; justify-content: space-between; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                <div>
+                    <label style="font-size: 0.8rem; color: #cbd5e1; cursor: pointer; display: inline-flex; align-items: center; gap: 0.45rem; user-select: none;">
+                        <input type="checkbox" id="sync-assigned-check" style="accent-color: #06b6d4; width: 16px; height: 16px; cursor: pointer;">
+                        <span>Also update assigned department / home ward to new location</span>
+                    </label>
+                    <div style="font-size: 0.72rem; color: #64748b; margin-left: 1.5rem;">
+                        Leave unchecked to demonstrate geofence alerts when equipment leaves its home ward.
+                    </div>
+                </div>
+                {% if current_user.role == 'ADMIN' %}
+                <button id="btn-move-equipment" class="btn btn-cyan btn-lg" onclick="handleMoveEquipment()" style="padding: 0.75rem 1.75rem; font-size: 0.95rem;">
+                    <i class="fa-solid fa-arrows-up-down-left-right"></i> Move Equipment Now
+                </button>
+                {% else %}
+                <button id="btn-move-equipment" class="btn btn-secondary btn-lg" disabled style="padding: 0.75rem 1.75rem; font-size: 0.95rem; opacity: 0.6; cursor: not-allowed;" title="Admin permission required to move equipment">
+                    <i class="fa-solid fa-lock"></i> Move Restricted (Admin Only)
+                </button>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+
+    <!-- 5. MOVEMENT HISTORY LOG -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title">
+                <i class="fa-solid fa-clock-rotate-left text-cyan"></i>
+                <span>Equipment Movement History Log (Saved in Database)</span>
+            </div>
+            <span id="movement-count-badge" class="status-pill status-pill-success" style="font-size: 0.72rem;">
+                0 Movements Logged
+            </span>
+        </div>
+        <div class="card-body" style="padding: 0; overflow-x: auto;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Date & Time</th>
+                        <th>Equipment Name & ID</th>
+                        <th>Previous Location</th>
+                        <th>New Location</th>
+                        <th>Gateway & Port (VLAN 20)</th>
+                        <th>Signal RSSI (Distance)</th>
+                    </tr>
+                </thead>
+                <tbody id="movement-history-body">
+                    <!-- Loaded dynamically via static/js/movement.js -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/movement.js') }}"></script>
+{% endblock %}
+

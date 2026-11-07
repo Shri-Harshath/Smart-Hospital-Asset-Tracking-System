@@ -1,0 +1,429 @@
+{% extends "base.html" %}
+
+{% block title %}Equipment Requests | Smart Hospital RTLS{% endblock %}
+
+{% block extra_head %}
+<style>
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.22rem 0.65rem;
+        border-radius: var(--radius-full);
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+    .status-badge-pending { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.35); }
+    .status-badge-approved { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35); }
+    .status-badge-rejected { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.35); }
+    .status-badge-completed { background: rgba(59, 130, 246, 0.15); color: #60a5fa; border: 1px solid rgba(59, 130, 246, 0.35); }
+
+    .route-display-box {
+        background: rgba(15, 23, 42, 0.75);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    .route-node {
+        flex: 1;
+        min-width: 200px;
+        background: rgba(30, 41, 59, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: var(--radius-sm);
+        padding: 0.85rem 1rem;
+    }
+
+    .route-node-label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 0.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+    }
+
+    .route-arrow {
+        font-size: 1.5rem;
+        color: #38bdf8;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: pulse-arrow 2s infinite ease-in-out;
+    }
+
+    @keyframes pulse-arrow {
+        0%, 100% { transform: translateX(0); opacity: 0.8; }
+        50% { transform: translateX(6px); opacity: 1; color: #2dd4bf; }
+    }
+
+    .tab-btn {
+        background: transparent;
+        border: none;
+        color: #94a3b8;
+        padding: 0.65rem 1.25rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .tab-btn:hover {
+        color: #f1f5f9;
+        background: rgba(255, 255, 255, 0.03);
+    }
+
+    .tab-btn.active {
+        color: #38bdf8;
+        border-bottom-color: #38bdf8;
+        background: rgba(56, 189, 248, 0.08);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="requests-page" style="max-width: 1400px; margin: 0 auto;">
+
+    <!-- Page Header Banner -->
+    <div style="margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <h1 style="font-size: 1.6rem; font-weight: 800; background: linear-gradient(to right, #38bdf8, #2dd4bf); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                Equipment Request Management
+            </h1>
+            <p style="font-size: 0.85rem; color: #94a3b8; margin-top: 0.25rem;">
+                Inter-department medical equipment requisitions & administrator dispatch authorization center.
+            </p>
+        </div>
+        <div style="display: flex; gap: 0.6rem; align-items: center;">
+            <span id="requests-pending-indicator" class="status-pill status-pill-warning">
+                <i class="fa-solid fa-clock"></i> <strong id="kpi-pending-badge">0</strong> Pending Requests
+            </span>
+            <a href="/movement" class="btn btn-secondary btn-sm">
+                <i class="fa-solid fa-arrows-up-down-left-right"></i> Manual Movement
+            </a>
+            <a href="/" class="btn btn-secondary btn-sm">
+                <i class="fa-solid fa-map"></i> Floor Map
+            </a>
+        </div>
+    </div>
+
+    <!-- Quick KPI Summary Strip -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.75rem;">
+        <div class="kpi-card kpi-purple" style="padding: 1rem 1.25rem;">
+            <div class="kpi-icon"><i class="fa-solid fa-clipboard-list"></i></div>
+            <div class="kpi-info">
+                <div class="kpi-value" id="kpi-total-requests">0</div>
+                <div class="kpi-label">Total Requisitions</div>
+            </div>
+        </div>
+
+        <div class="kpi-card kpi-amber" style="padding: 1rem 1.25rem;">
+            <div class="kpi-icon"><i class="fa-solid fa-hourglass-half"></i></div>
+            <div class="kpi-info">
+                <div class="kpi-value" id="kpi-pending-requests">0</div>
+                <div class="kpi-label">Pending Admin Review</div>
+            </div>
+        </div>
+
+        <div class="kpi-card kpi-green" style="padding: 1rem 1.25rem;">
+            <div class="kpi-icon"><i class="fa-solid fa-circle-check"></i></div>
+            <div class="kpi-info">
+                <div class="kpi-value" id="kpi-approved-requests">0</div>
+                <div class="kpi-label">Approved & Dispatched</div>
+            </div>
+        </div>
+
+        <div class="kpi-card kpi-danger" style="padding: 1rem 1.25rem;">
+            <div class="kpi-icon"><i class="fa-solid fa-circle-xmark"></i></div>
+            <div class="kpi-info">
+                <div class="kpi-value" id="kpi-rejected-requests">0</div>
+                <div class="kpi-label">Declined / Rejected</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 1. SUBMIT EQUIPMENT REQUEST FORM CARD -->
+    <div class="card" style="margin-bottom: 2rem; border-color: rgba(56, 189, 248, 0.35); box-shadow: 0 4px 25px rgba(56, 189, 248, 0.08);">
+        <div class="card-header" style="background: rgba(56, 189, 248, 0.07);">
+            <div class="card-title">
+                <i class="fa-solid fa-file-circle-plus text-cyan"></i>
+                <span>Submit Equipment Requisition</span>
+            </div>
+            <span style="font-size: 0.75rem; color: #94a3b8;">
+                Current location is automatically detected from active telemetry. False locations are prohibited.
+            </span>
+        </div>
+        <div class="card-body" style="padding: 1.5rem;">
+            
+            <div style="display: grid; grid-template-columns: 1fr 1.2fr 0.6fr; gap: 1.25rem; margin-bottom: 1.25rem;">
+                
+                <!-- A. Requesting Department Dropdown -->
+                <div>
+                    <label for="req-department-select" style="display: block; font-size: 0.82rem; font-weight: 700; color: #f1f5f9; margin-bottom: 0.45rem;">
+                        <i class="fa-solid fa-hospital-user text-cyan"></i> Requesting Department / Room:
+                    </label>
+                    <select id="req-department-select" class="form-select" onchange="onRequestingDepartmentChanged()" style="padding: 0.65rem 0.85rem;">
+                        <option value="">-- Choose Requesting Department --</option>
+                        <option value="ICU" selected>ICU (Intensive Care Unit)</option>
+                        <option value="ER">Emergency Room (ER)</option>
+                        <option value="OT">Operation Theatre (OT)</option>
+                        <option value="GEN">General Ward</option>
+                        <option value="CARDIO">Cardiology</option>
+                        <option value="PHARM">Pharmacy</option>
+                        <option value="STORAGE">Storage</option>
+                    </select>
+                    <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 0.35rem;">
+                        Department placing the requisition.
+                    </div>
+                </div>
+
+                <!-- B. Equipment Selection Dropdown -->
+                <div>
+                    <label for="req-equipment-select" style="display: block; font-size: 0.82rem; font-weight: 700; color: #f1f5f9; margin-bottom: 0.45rem;">
+                        <i class="fa-solid fa-stethoscope text-cyan"></i> Select Equipment:
+                    </label>
+                    <select id="req-equipment-select" class="form-select" onchange="onAssetSelectedForRequest()" style="padding: 0.65rem 0.85rem;">
+                        <option value="">Loading registered medical equipment...</option>
+                    </select>
+                    <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 0.35rem;">
+                        Displays all 12 registered assets on the hospital IoT network.
+                    </div>
+                </div>
+
+                <!-- C. Quantity Required -->
+                <div>
+                    <label for="req-quantity-input" style="display: block; font-size: 0.82rem; font-weight: 700; color: #f1f5f9; margin-bottom: 0.45rem;">
+                        <i class="fa-solid fa-calculator text-cyan"></i> Quantity:
+                    </label>
+                    <input type="number" id="req-quantity-input" class="form-input" min="1" max="5" value="1" style="padding: 0.65rem 0.85rem;">
+                    <div style="font-size: 0.72rem; color: #94a3b8; margin-top: 0.35rem;">
+                        Units required.
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- D. Reason for Request (Optional) & Destination Room Confirmation -->
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem;">
+                <div>
+                    <label for="req-reason-input" style="display: block; font-size: 0.82rem; font-weight: 700; color: #f1f5f9; margin-bottom: 0.45rem;">
+                        <i class="fa-solid fa-notes-medical text-cyan"></i> Reason for Request (Optional / Clinical Justification):
+                    </label>
+                    <input type="text" id="req-reason-input" class="form-input" placeholder="e.g. Critical trauma resuscitation, acute respiratory distress, post-op monitoring..." style="padding: 0.65rem 0.85rem;">
+                </div>
+
+                <div>
+                    <label for="req-destination-select" style="display: block; font-size: 0.82rem; font-weight: 700; color: #f1f5f9; margin-bottom: 0.45rem;">
+                        <i class="fa-solid fa-location-dot text-cyan"></i> Requested Destination Ward:
+                    </label>
+                    <select id="req-destination-select" class="form-select" onchange="onDestinationRoomChanged()" style="padding: 0.65rem 0.85rem;">
+                        <option value="ICU">ICU</option>
+                        <option value="ER">Emergency Room</option>
+                        <option value="OT">Operation Theatre</option>
+                        <option value="GEN">General Ward</option>
+                        <option value="CARDIO">Cardiology</option>
+                        <option value="PHARM">Pharmacy</option>
+                        <option value="STORAGE">Storage</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 2. AUTOMATIC LOCATION IDENTIFICATION & FROM -> TO ROUTE PREVIEW -->
+            <div id="route-preview-container" class="route-display-box" style="margin-bottom: 1.25rem;">
+                <!-- FROM: Live Actual Location -->
+                <div class="route-node">
+                    <div class="route-node-label" style="color: #38bdf8;">
+                        <i class="fa-solid fa-map-pin"></i> FROM (Actual Live Physical Location)
+                    </div>
+                    <div id="preview-from-location" style="font-size: 1.15rem; font-weight: 800; color: #22d3ee;">
+                        Select equipment to detect location...
+                    </div>
+                    <div id="preview-from-meta" style="font-size: 0.72rem; color: #94a3b8; margin-top: 0.2rem;">
+                        Source ward verified via active BLE beacon & gateway RSSI telemetry.
+                    </div>
+                </div>
+
+                <!-- ROUTE ARROW -->
+                <div class="route-arrow">
+                    <i class="fa-solid fa-arrow-right-long"></i>
+                </div>
+
+                <!-- TO: Requested Destination -->
+                <div class="route-node">
+                    <div class="route-node-label" style="color: #34d399;">
+                        <i class="fa-solid fa-hospital-user"></i> TO (Requested Destination Ward)
+                    </div>
+                    <div id="preview-to-location" style="font-size: 1.15rem; font-weight: 800; color: #34d399;">
+                        ICU
+                    </div>
+                    <div id="preview-to-meta" style="font-size: 0.72rem; color: #94a3b8; margin-top: 0.2rem;">
+                        Target destination ward for this equipment requisition.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Route Validation Warning Banner -->
+            <div id="route-validation-banner" class="hidden" style="padding: 0.75rem 1rem; border-radius: var(--radius-sm); margin-bottom: 1.25rem; font-size: 0.82rem; display: flex; align-items: center; gap: 0.6rem;">
+                <i id="route-validation-icon" class="fa-solid fa-circle-exclamation"></i>
+                <span id="route-validation-text"></span>
+            </div>
+
+            <!-- Submit Button Strip -->
+            <div style="display: flex; justify-content: flex-end; gap: 1rem; align-items: center;">
+                <span style="font-size: 0.8rem; color: #94a3b8;">
+                    Submitting creates an administrator notification and logs the requisition for review.
+                </span>
+                <button id="btn-submit-request" class="btn btn-cyan btn-lg" onclick="handleSubmitEquipmentRequest()" style="padding: 0.75rem 1.85rem; font-size: 0.95rem;">
+                    <i class="fa-solid fa-paper-plane"></i> Submit Requisition
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- 3. REQUEST MANAGEMENT & ADMIN REVIEW CENTER -->
+    <div class="card">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div class="card-title">
+                <i class="fa-solid fa-list-check text-cyan"></i>
+                <span>Requisition Registry & Authorization Board</span>
+            </div>
+            
+            <!-- Filters Toolbar -->
+            <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+                <!-- Department Filter -->
+                <select id="filter-room-select" class="form-select" onchange="renderRequestsTable()" style="font-size: 0.82rem; padding: 0.4rem 0.65rem; width: auto;">
+                    <option value="">All Departments</option>
+                    <option value="ICU">ICU</option>
+                    <option value="ER">Emergency Room</option>
+                    <option value="OT">Operation Theatre</option>
+                    <option value="GEN">General Ward</option>
+                    <option value="CARDIO">Cardiology</option>
+                    <option value="PHARM">Pharmacy</option>
+                    <option value="STORAGE">Storage</option>
+                </select>
+
+                <!-- Search Input -->
+                <input type="text" id="requests-search-input" class="form-input" placeholder="Search equipment or reason..." oninput="renderRequestsTable()" style="font-size: 0.82rem; padding: 0.4rem 0.65rem; width: 220px;">
+                
+                <!-- Refresh Button -->
+                <button class="btn btn-secondary btn-sm" onclick="loadAllRequests()" title="Refresh requests">
+                    <i class="fa-solid fa-rotate"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div style="display: flex; border-bottom: 1px solid var(--border-color); background: rgba(15, 23, 42, 0.4); padding: 0 1rem;">
+            <button id="tab-pending" class="tab-btn active" onclick="switchTab('Pending')">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+                <span>Pending Review (<span id="tab-pending-count">0</span>)</span>
+            </button>
+            <button id="tab-all" class="tab-btn" onclick="switchTab('All')">
+                <i class="fa-solid fa-table-list"></i>
+                <span>All Requisitions (<span id="tab-all-count">0</span>)</span>
+            </button>
+            <button id="tab-approved" class="tab-btn" onclick="switchTab('Approved')">
+                <i class="fa-solid fa-circle-check" style="color: #34d399;"></i>
+                <span>Approved (<span id="tab-approved-count">0</span>)</span>
+            </button>
+            <button id="tab-rejected" class="tab-btn" onclick="switchTab('Rejected')">
+                <i class="fa-solid fa-circle-xmark" style="color: #f87171;"></i>
+                <span>Rejected (<span id="tab-rejected-count">0</span>)</span>
+            </button>
+        </div>
+
+        <!-- Requests Data Table -->
+        <div class="card-body" style="padding: 0; overflow-x: auto;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="width: 70px;">Req ID</th>
+                        <th style="width: 140px;">Date & Time</th>
+                        <th>Medical Equipment & ID</th>
+                        <th>Requisition Route (From &rarr; To)</th>
+                        <th>Requesting Ward</th>
+                        <th>Qty & Clinical Reason</th>
+                        <th>Status</th>
+                        <th>Admin Decision</th>
+                        <th style="text-align: right; min-width: 180px;">Action / Authorization</th>
+                    </tr>
+                </thead>
+                <tbody id="requests-table-body">
+                    <!-- Populated dynamically via static/js/requests.js -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- REJECTION REASON MODAL -->
+<div id="reject-modal" class="modal-overlay hidden">
+    <div class="modal-card" style="max-width: 480px;">
+        <div class="modal-header">
+            <div class="modal-title">
+                <i class="fa-solid fa-ban text-danger"></i>
+                <span>Decline Equipment Requisition</span>
+            </div>
+            <button class="close-btn" onclick="closeRejectModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p style="font-size: 0.85rem; color: #cbd5e1; margin-bottom: 1rem;">
+                Are you sure you want to decline Request #<span id="reject-modal-req-id" style="font-weight: 700; color: #38bdf8;"></span> for <strong id="reject-modal-asset-name"></strong>?
+            </p>
+            <div style="margin-bottom: 1.25rem;">
+                <label for="reject-reason-text" style="display: block; font-size: 0.82rem; font-weight: 700; color: #f1f5f9; margin-bottom: 0.45rem;">
+                    Rejection Reason (will be communicated to requester):
+                </label>
+                <textarea id="reject-reason-text" class="form-input" rows="3" placeholder="e.g. Currently in use for surgery, scheduled for routine calibration, reserve for trauma..." style="width: 100%;"></textarea>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+                <button class="btn btn-secondary" onclick="closeRejectModal()">Cancel</button>
+                <button class="btn btn-danger" onclick="submitRejection()">
+                    <i class="fa-solid fa-xmark"></i> Confirm Rejection
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- INTERIM LOCATION CHANGE CONFIRMATION MODAL -->
+<div id="confirm-move-modal" class="modal-overlay hidden">
+    <div class="modal-card" style="max-width: 480px;">
+        <div class="modal-header">
+            <div class="modal-title">
+                <i class="fa-solid fa-triangle-exclamation" style="color: #f59e0b;"></i>
+                <span>Equipment Relocated Since Request</span>
+            </div>
+            <button class="close-btn" onclick="closeConfirmMoveModal()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p id="confirm-move-modal-text" style="font-size: 0.88rem; color: #cbd5e1; margin-bottom: 1.25rem; line-height: 1.45;"></p>
+            <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+                <button class="btn btn-secondary" onclick="closeConfirmMoveModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="proceedForcedApproval()">
+                    <i class="fa-solid fa-check"></i> Proceed With Transfer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/requests.js') }}"></script>
+{% endblock %}
